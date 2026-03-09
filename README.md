@@ -1,51 +1,208 @@
-# Welcome to your Expo app 👋
+# Same Page
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A real-time multiplayer mobile party game built with **Expo (React Native)** and **Firebase Realtime Database**.
 
-## Get started
+Players join a room, answer the same prompt, and score points when their answers match someone else's. The closer everyone thinks alike, the higher you score.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## How the Game Works
 
-2. Start the app
+1. A host creates a room and gets a **4-digit code**
+2. Friends join using that code
+3. Each round, everyone sees the same prompt and has a limited time to type their answer (answers are hidden from other players while submitting)
+4. When time is up, answers are revealed and **clustered by similarity** — matching answers score a point each
+5. The game runs for **5 rounds**; the player with the most points wins
 
-   ```bash
-   npx expo start
-   ```
+**Scoring:** Fuzzy matching (Levenshtein distance) groups similar answers together, so "Movie" and "movie" count as the same answer.
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+| Layer | Technology |
+|---|---|
+| Framework | Expo SDK 54 + Expo Router (file-based routing) |
+| Language | TypeScript |
+| Backend / DB | Firebase Realtime Database (Spark free plan) |
+| Auth | Firebase Anonymous Auth (per-tab session isolation) |
+| State | React Context + custom `useFirebaseGame` hook |
+| Scoring | Host-side (no Cloud Functions needed) |
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## Project Structure
 
-```bash
-npm run reset-project
+```
+same-page/
+├── app/
+│   ├── index.tsx              # Splash screen (auto-navigates to /home)
+│   ├── home.tsx               # Nickname entry + create/join room
+│   ├── create.tsx             # Room settings (pack + timer selection)
+│   ├── lobby/[roomCode].tsx   # Waiting lobby with live player list
+│   ├── game/[roomCode].tsx    # Guessing screen with countdown timer
+│   ├── reveal/[roomCode].tsx  # Answer reveal + scoring
+│   └── results/[roomCode].tsx # Final leaderboard
+├── src/
+│   ├── context/GameContext.tsx        # Shared game state across all screens
+│   ├── data/packs.ts                  # Question packs (local, no DB read needed)
+│   ├── hooks/
+│   │   ├── useFirebaseGame.ts         # Core Firebase logic & game actions
+│   │   └── useTimer.ts                # Server-offset-corrected countdown timer
+│   ├── lib/
+│   │   └── scoringEngine.ts           # Fuzzy matching + cluster scoring
+│   ├── components/
+│   │   ├── PlayerList.tsx
+│   │   ├── TimerDisplay.tsx
+│   │   └── ScoreBoard.tsx
+│   └── types/game.ts                  # TypeScript interfaces
+├── firebase/
+│   └── database.rules.json            # Firebase security rules
+└── firebaseConfig.ts                  # Firebase init + anonymous auth
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## Prerequisites
 
-To learn more about developing your project with Expo, look at the following resources:
+- [Node.js](https://nodejs.org/) v18+
+- [Expo CLI](https://docs.expo.dev/get-started/installation/) — `npm install -g expo-cli`
+- [Expo Go](https://expo.dev/go) app on your phone **or** an Android/iOS simulator
+- A Firebase project (see Firebase Setup below)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## Getting Started
 
-Join our community of developers creating universal apps.
+### 1. Clone the repo
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-# same-page
+```bash
+git clone https://github.com/kombuchadev/same-page.git
+cd same-page
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Firebase Setup
+
+This app requires a Firebase project with **Realtime Database** and **Anonymous Authentication** enabled.
+
+#### Create a Firebase project
+
+1. Go to [console.firebase.google.com](https://console.firebase.google.com)
+2. Click **Add project** → follow the prompts
+3. In the left sidebar, go to **Build → Realtime Database** → Create database → choose a region → start in **test mode** (you'll apply proper rules later)
+4. Go to **Build → Authentication** → Get started → **Sign-in method** tab → enable **Anonymous**
+
+#### Get your config
+
+1. In the Firebase console, go to **Project Settings** (gear icon) → **Your apps**
+2. Click the web icon (`</>`) to register a web app
+3. Copy the `firebaseConfig` object
+
+#### Update `firebaseConfig.ts`
+
+Replace the values in `firebaseConfig.ts` with your own:
+
+```ts
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.REGION.firebasedatabase.app",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+};
+```
+
+#### Apply security rules
+
+In the Firebase console, go to **Realtime Database → Rules** and paste the contents of `firebase/database.rules.json`, then click **Publish**.
+
+---
+
+### 4. Start the development server
+
+```bash
+npm start
+```
+
+This opens the **Expo Dev Tools** in your terminal. From there:
+
+| Command | Action |
+|---|---|
+| Press `a` | Open on Android emulator |
+| Press `i` | Open on iOS simulator (macOS only) |
+| Scan QR code | Open in **Expo Go** on your phone |
+| Press `w` | Open in browser (limited — no mobile sensors) |
+
+Or run directly:
+
+```bash
+npm run android   # Android emulator
+npm run ios       # iOS simulator
+npm run web       # Browser
+```
+
+---
+
+## Testing Multiplayer Locally
+
+To simulate multiple players on one machine:
+
+1. Run `npm start`
+2. Open **Expo Go** on two or more physical phones and scan the QR code, **or**
+3. Open the app in a browser (`w`) across **multiple tabs** — each tab gets its own anonymous session, so they act as separate players
+
+> **Note:** Browser tabs work well for quick testing. Each tab is treated as a unique player due to `browserSessionPersistence` in Firebase Auth.
+
+**Recommended test flow:**
+1. Tab 1 → Enter nickname → Create Room → choose pack + timer → arrives in lobby
+2. Tab 2 → Enter nickname → Join Room → enter the 4-digit code → arrives in same lobby
+3. Tab 1 (host) → Start Game
+4. Both tabs answer the prompt within the timer
+5. After timer, answers reveal with clustering + scores
+6. Host advances through rounds → final leaderboard after round 5
+
+---
+
+## Question Packs
+
+Packs are stored locally in `src/data/packs.ts`. Currently included:
+
+| Pack | Description |
+|---|---|
+| ⭐ The Essentials | Easy everyday basics — great for first games |
+| 🍕 The Foodie Pack | Food-themed questions — best played hungry |
+| 🎬 The Screen & Stage | Movies, music, and internet culture |
+| 🧩 The Deep End | Abstract and weird — no right answers, only popular ones |
+
+The host can select **multiple packs** when creating a room, and can edit the selection from the lobby before the game starts. Questions are drawn from the combined pool of all selected packs.
+
+---
+
+## Firebase Security Rules
+
+Rules are in `firebase/database.rules.json`. Key points:
+
+- Any authenticated user can **read** a room
+- Only the host can **write** to the root room object (phase, prompts, scores)
+- Players can only **write their own** player entry and answers
+- Answer nodes are **hidden** from other players during the guessing phase — only the host reads them to run scoring
+
+---
+
+## Scripts
+
+```bash
+npm start          # Start Expo dev server
+npm run android    # Start on Android
+npm run ios        # Start on iOS
+npm run web        # Start in browser
+npm run lint       # Run ESLint
+```
