@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomCode": {
+        ".read": "auth != null",
+
+        ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid)",
+
+        "players": {
+          "$playerId": {
+            ".write": "auth != null && ($playerId === auth.uid || data.parent().parent().child('hostUid').val() === auth.uid)"
+          }
+        },
+
+        "answers": {
+          "$round": {
+            ".read": "auth != null && data.parent().parent().child('hostUid').val() === auth.uid",
+            "$playerId": {
+              ".write": "auth != null && $playerId === auth.uid && root.child('rooms').child($roomCode).child('phase').val() === 'GUESSING'",
+              ".read": "auth != null && ($playerId === auth.uid || root.child('rooms').child($roomCode).child('hostUid').val() === auth.uid)"
+            }
+          }
+        },
+
+        "revealedAnswers": {
+          ".read": "auth != null",
+          ".write": "auth != null && data.parent().child('hostUid').val() === auth.uid"
+        }
+      }
+    }
+  }
+}
