@@ -18,6 +18,13 @@ const TIMER_OPTIONS = [
   { label: '60 sec', value: 60 },
 ];
 
+const ROUNDS_OPTIONS = [
+  { label: '5', value: 5 },
+  { label: '10', value: 10 },
+  { label: '15', value: 15 },
+  { label: '20', value: 20 },
+];
+
 export default function CreateScreen() {
   const router = useRouter();
   const { nickname } = useLocalSearchParams<{ nickname: string }>();
@@ -25,6 +32,7 @@ export default function CreateScreen() {
 
   const [selectedPackIds, setSelectedPackIds] = useState<string[]>(['starter_pack']);
   const [roundDuration, setRoundDuration] = useState(30);
+  const [totalRounds, setTotalRounds] = useState(5);
 
   const togglePack = (id: string) => {
     setSelectedPackIds((prev) => {
@@ -46,6 +54,7 @@ export default function CreateScreen() {
       const code = await createRoom(nickname, {
         packIds: selectedPackIds,
         roundDuration,
+        totalRounds,
       });
       router.replace(`/lobby/${code}`);
     } catch (err: any) {
@@ -79,6 +88,24 @@ export default function CreateScreen() {
               onPress={() => setRoundDuration(opt.value)}
             >
               <Text style={[styles.timerChipText, roundDuration === opt.value && styles.timerChipTextActive]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      {/* Rounds */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🔁  Number of Rounds</Text>
+        <View style={styles.timerRow}>
+          {ROUNDS_OPTIONS.map((opt) => (
+            <Pressable
+              key={opt.value}
+              style={[styles.timerChip, totalRounds === opt.value && styles.timerChipActive]}
+              onPress={() => setTotalRounds(opt.value)}
+            >
+              <Text style={[styles.timerChipText, totalRounds === opt.value && styles.timerChipTextActive]}>
                 {opt.label}
               </Text>
             </Pressable>

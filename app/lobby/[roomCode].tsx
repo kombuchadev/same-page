@@ -21,6 +21,13 @@ const TIMER_OPTIONS = [
   { label: '60 sec', value: 60 },
 ];
 
+const ROUNDS_OPTIONS = [
+  { label: '5', value: 5 },
+  { label: '10', value: 10 },
+  { label: '15', value: 15 },
+  { label: '20', value: 20 },
+];
+
 export default function LobbyScreen() {
   const { roomCode } = useLocalSearchParams<{ roomCode: string }>();
   const router = useRouter();
@@ -30,6 +37,7 @@ export default function LobbyScreen() {
   const [editVisible, setEditVisible] = useState(false);
   const [editPackIds, setEditPackIds] = useState<string[]>(['starter_pack']);
   const [editDuration, setEditDuration] = useState(30);
+  const [editRounds, setEditRounds] = useState(5);
   const [saving, setSaving] = useState(false);
 
   const playerCount = Object.keys(players).length;
@@ -45,6 +53,7 @@ export default function LobbyScreen() {
     if (!room) return;
     setEditPackIds([...room.packIds]);
     setEditDuration(room.roundDuration);
+    setEditRounds(room.totalRounds);
     setEditVisible(true);
   };
 
@@ -61,7 +70,7 @@ export default function LobbyScreen() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      await updateRoomSettings({ packIds: editPackIds, roundDuration: editDuration });
+      await updateRoomSettings({ packIds: editPackIds, roundDuration: editDuration, totalRounds: editRounds });
       setEditVisible(false);
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -126,6 +135,14 @@ export default function LobbyScreen() {
             <View style={styles.settingRow}>
               <Text style={styles.settingIcon}>⏱</Text>
               <Text style={styles.settingValue}>{room.roundDuration} seconds per round</Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Rounds */}
+            <View style={styles.settingRow}>
+              <Text style={styles.settingIcon}>🔁</Text>
+              <Text style={styles.settingValue}>{room.totalRounds} rounds</Text>
             </View>
 
             <View style={styles.divider} />
@@ -210,6 +227,24 @@ export default function LobbyScreen() {
                   onPress={() => setEditDuration(opt.value)}
                 >
                   <Text style={[styles.timerChipText, editDuration === opt.value && styles.timerChipTextActive]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {/* Rounds */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🔁  Number of Rounds</Text>
+            <View style={styles.timerRow}>
+              {ROUNDS_OPTIONS.map((opt) => (
+                <Pressable
+                  key={opt.value}
+                  style={[styles.timerChip, editRounds === opt.value && styles.timerChipActive]}
+                  onPress={() => setEditRounds(opt.value)}
+                >
+                  <Text style={[styles.timerChipText, editRounds === opt.value && styles.timerChipTextActive]}>
                     {opt.label}
                   </Text>
                 </Pressable>

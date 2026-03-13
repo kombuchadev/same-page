@@ -22,6 +22,7 @@ export default function GameScreen() {
     players,
     isHost,
     hasSubmitted,
+    submittedPlayerIds,
     submitAnswer,
     transitionToReveal,
     leaveRoom,
@@ -59,18 +60,19 @@ export default function GameScreen() {
     }
   }, [isHost, isExpired, room?.phase, transitioning]);
 
-  // Host: auto-transition when all players have submitted
+  // Host: auto-transition when all connected players have submitted
   useEffect(() => {
     if (!isHost || !room || room.phase !== 'GUESSING' || transitioning) return;
 
-    const playerIds = Object.keys(players);
-    if (playerIds.length === 0) return;
+    const connectedPlayerIds = Object.keys(players).filter((id) => players[id].connected);
+    if (connectedPlayerIds.length === 0) return;
 
-    // We can't easily check others' submissions from here since answers are hidden.
-    // The host will rely on timer expiry or manual check.
-    // A more robust approach would listen to answer count, but security rules
-    // restrict reading. For now, timer-based transition is the primary mechanism.
-  }, [isHost, room, players, transitioning]);
+    const allSubmitted = connectedPlayerIds.every((id) => submittedPlayerIds.includes(id));
+    if (allSubmitted) {
+      setTransitioning(true);
+      transitionToReveal().finally(() => setTransitioning(false));
+    }
+  }, [isHost, room, players, submittedPlayerIds, transitioning]);
 
   const handleSubmit = async () => {
     if (!answer.trim()) return;
@@ -127,11 +129,19 @@ export default function GameScreen() {
           <Text style={styles.waitingSubtext}>Waiting for other players...</Text>
 
           <View style={styles.playerStatus}>
-            {Object.entries(players).map(([id, player]) => (
-              <Text key={id} style={styles.playerStatusText}>
-                {player.nickname}
-              </Text>
-            ))}
+            {Object.entries(players).map(([id, player]) => {
+              const submitted = submittedPlayerIds.includes(id);
+              return (
+                <View key={id} style={styles.playerStatusRow}>
+                  <Text style={[styles.playerStatusIcon, submitted ? styles.iconDone : styles.iconPending]}>
+                    {submitted ? '✓' : '…'}
+                  </Text>
+                  <Text style={[styles.playerStatusText, !submitted && styles.playerStatusPending]}>
+                    {player.nickname}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         </View>
       )}
@@ -215,11 +225,32 @@ const styles = StyleSheet.create({
   },
   playerStatus: {
     marginTop: 16,
+    width: '100%',
+  },
+  playerStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    gap: 10,
+  },
+  playerStatusIcon: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    width: 20,
+    textAlign: 'center',
+  },
+  iconDone: {
+    color: '#2ecc71',
+  },
+  iconPending: {
+    color: '#bdc3c7',
   },
   playerStatusText: {
-    fontSize: 14,
-    color: '#666',
-    paddingVertical: 2,
+    fontSize: 15,
+    color: '#333',
+  },
+  playerStatusPending: {
+    color: '#aaa',
   },
   error: {
     color: '#e74c3c',

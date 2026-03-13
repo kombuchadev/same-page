@@ -3,6 +3,7 @@ export type GamePhase = 'LOBBY' | 'GUESSING' | 'REVEAL' | 'RESULTS';
 export interface RoomSettings {
   packIds: string[];
   roundDuration: number; // seconds
+  totalRounds: number;
 }
 
 export interface Player {
@@ -47,6 +48,7 @@ export interface GameState {
   players: Record<string, Player>;
   myAnswer: string | null;
   hasSubmitted: boolean;
+  submittedPlayerIds: string[];
   revealedAnswers: Record<string, RevealedAnswer> | null;
   isHost: boolean;
   roomCode: string | null;

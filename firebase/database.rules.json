@@ -22,6 +22,15 @@
           }
         },
 
+        "submissions": {
+          "$round": {
+            ".read": "auth != null",
+            "$playerId": {
+              ".write": "auth != null && $playerId === auth.uid"
+            }
+          }
+        },
+
         "revealedAnswers": {
           ".read": "auth != null",
           ".write": "auth != null && data.parent().child('hostUid').val() === auth.uid"

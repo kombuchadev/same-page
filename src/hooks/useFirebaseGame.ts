@@ -21,8 +21,6 @@ import type {
   RoomSettings,
 } from '@/src/types/game';
 
-const TOTAL_ROUNDS = 5;
-
 function generateRoomCode(): string {
   return String(1000 + Math.floor(Math.random() * 9000));
 }
@@ -32,6 +30,7 @@ export function useFirebaseGame(): GameState & GameActions {
   const [players, setPlayers] = useState<Record<string, Player>>({});
   const [myAnswer, setMyAnswer] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [submittedPlayerIds, setSubmittedPlayerIds] = useState<string[]>([]);
   const [revealedAnswers, setRevealedAnswers] = useState<Record<string, RevealedAnswer> | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [myUid, setMyUid] = useState<string | null>(null);
@@ -76,7 +75,7 @@ export function useFirebaseGame(): GameState & GameActions {
         hostUid: data.hostUid,
         phase: data.phase,
         currentRound: data.currentRound ?? 0,
-        totalRounds: data.totalRounds ?? TOTAL_ROUNDS,
+        totalRounds: data.totalRounds ?? 5,
         timerEndsAt: data.timerEndsAt ?? null,
         currentPrompt: data.currentPrompt ?? null,
         createdAt: data.createdAt ?? 0,
@@ -126,6 +125,21 @@ export function useFirebaseGame(): GameState & GameActions {
     }
   }, [room?.phase, room?.currentRound]);
 
+  // Subscribe to public submissions node so all players can see who has submitted
+  useEffect(() => {
+    if (!roomCode || !room || room.phase !== 'GUESSING') {
+      setSubmittedPlayerIds([]);
+      return;
+    }
+
+    const submissionsRef = ref(db, `rooms/${roomCode}/submissions/${room.currentRound}`);
+    const unsub = onValue(submissionsRef, (snap) => {
+      setSubmittedPlayerIds(snap.exists() ? Object.keys(snap.val()) : []);
+    });
+
+    return unsub;
+  }, [roomCode, room?.phase, room?.currentRound]);
+
   const createRoom = useCallback(async (nickname: string, settings: RoomSettings): Promise<string> => {
     if (!myUid) throw new Error('Not authenticated');
     setLoading(true);
@@ -146,7 +160,7 @@ export function useFirebaseGame(): GameState & GameActions {
         hostUid: myUid,
         phase: 'LOBBY',
         currentRound: 0,
-        totalRounds: TOTAL_ROUNDS,
+        totalRounds: settings.totalRounds,
         timerEndsAt: null,
         currentPrompt: null,
         createdAt: serverTimestamp(),
@@ -226,6 +240,7 @@ export function useFirebaseGame(): GameState & GameActions {
     await update(ref(db, `rooms/${roomCode}`), {
       packIds: settings.packIds,
       roundDuration: settings.roundDuration,
+      totalRounds: settings.totalRounds,
     });
   }, [roomCode, myUid, isHost]);
 
@@ -264,6 +279,11 @@ export function useFirebaseGame(): GameState & GameActions {
       answer: trimmed,
       submittedAt: serverTimestamp(),
     });
+
+    // Write to public submissions node (no answer content — just presence).
+    // Fire-and-forget: the answer is already saved, so a race with phase
+    // transition should not surface as an error to the player.
+    set(ref(db, `rooms/${roomCode}/submissions/${room.currentRound}/${myUid}`), true).catch(() => {});
 
     setMyAnswer(trimmed);
     setHasSubmitted(true);
@@ -341,6 +361,13 @@ export function useFirebaseGame(): GameState & GameActions {
       scoreResets[`players/${playerId}/score`] = 0;
     }
 
+    // Clean up game data BEFORE changing phase back to LOBBY,
+    // so stale submissions can't trigger auto-transition if the
+    // host starts a new game quickly.
+    await remove(ref(db, `rooms/${roomCode}/answers`));
+    await remove(ref(db, `rooms/${roomCode}/revealedAnswers`));
+    await remove(ref(db, `rooms/${roomCode}/submissions`));
+
     await update(ref(db, `rooms/${roomCode}`), {
       ...scoreResets,
       phase: 'LOBBY',
@@ -348,9 +375,6 @@ export function useFirebaseGame(): GameState & GameActions {
       currentPrompt: null,
       timerEndsAt: null,
     });
-
-    await remove(ref(db, `rooms/${roomCode}/answers`));
-    await remove(ref(db, `rooms/${roomCode}/revealedAnswers`));
 
     usedPromptIndicesRef.current = [];
   }, [roomCode, myUid, isHost, players]);
@@ -360,6 +384,7 @@ export function useFirebaseGame(): GameState & GameActions {
     players,
     myAnswer,
     hasSubmitted,
+    submittedPlayerIds,
     revealedAnswers,
     isHost,
     roomCode,
