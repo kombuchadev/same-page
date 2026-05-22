@@ -4,9 +4,9 @@ export function normalizeAnswer(raw: string): string {
   return raw
     .trim()
     .toLowerCase()
-    .replace(/[-_]/g, ' ')       // hyphens/underscores to spaces
-    .replace(/[^a-z0-9 ]/g, '')  // remove punctuation
-    .replace(/\s+/g, ' ')        // collapse whitespace
+    .replace(/[-_]/g, ' ') // hyphens/underscores to spaces
+    .replace(/[^a-z0-9 ]/g, '') // remove punctuation
+    .replace(/\s+/g, ' ') // collapse whitespace
     .trim();
 }
 
@@ -17,9 +17,7 @@ export function levenshteinDistance(a: string, b: string): number {
   if (m === 0) return n;
   if (n === 0) return m;
 
-  const dp: number[][] = Array.from({ length: m + 1 }, () =>
-    Array(n + 1).fill(0)
-  );
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
   for (let i = 0; i <= m; i++) dp[i][0] = i;
   for (let j = 0; j <= n; j++) dp[0][j] = j;
@@ -28,9 +26,9 @@ export function levenshteinDistance(a: string, b: string): number {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,     // deletion
-        dp[i][j - 1] + 1,     // insertion
-        dp[i - 1][j - 1] + cost // substitution
+        dp[i - 1][j] + 1, // deletion
+        dp[i][j - 1] + 1, // insertion
+        dp[i - 1][j - 1] + cost, // substitution
       );
     }
   }
@@ -44,7 +42,7 @@ function getFuzzyThreshold(answerLength: number): number {
 }
 
 export function clusterAnswers(
-  answers: Record<string, string> // playerId -> raw answer
+  answers: Record<string, string>, // playerId -> raw answer
 ): AnswerCluster[] {
   const entries = Object.entries(answers);
   if (entries.length === 0) return [];
@@ -122,7 +120,7 @@ export function clusterAnswers(
 }
 
 export function scoreRound(
-  answers: Record<string, string> // playerId -> raw answer
+  answers: Record<string, string>, // playerId -> raw answer
 ): {
   clusters: AnswerCluster[];
   revealed: Record<string, RevealedAnswer>;

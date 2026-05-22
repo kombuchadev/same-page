@@ -1,43 +1,75 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Colors, Radius, FontFamily } from '@/constants/theme';
 
 export default function SplashScreen() {
   const router = useRouter();
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(16)).current;
+  const scale = useRef(new Animated.Value(0.8)).current;
+  const translateY = useRef(new Animated.Value(24)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 700,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 700,
-        useNativeDriver: true,
-      }),
+    // Logo pops in with bounce, then text fades up
+    Animated.sequence([
+      Animated.parallel([
+        Animated.spring(scale, {
+          toValue: 1,
+          friction: 5,
+          tension: 120,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(taglineOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
 
     const timer = setTimeout(() => {
       router.replace('/home');
-    }, 2400);
+    }, 2600);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [opacity, scale, translateY, taglineOpacity, router]);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.content, { opacity, transform: [{ translateY }] }]}>
+      {/* Logo */}
+      <Animated.View style={[styles.logoWrap, { opacity, transform: [{ scale }] }]}>
         <View style={styles.logoBox}>
           <Text style={styles.logoEmoji}>🧠</Text>
         </View>
+      </Animated.View>
+
+      {/* Title + subtitle slide up */}
+      <Animated.View
+        style={{
+          transform: [{ translateY }],
+          opacity: taglineOpacity,
+          alignItems: 'center',
+        }}
+      >
         <Text style={styles.title}>Same Page</Text>
         <Text style={styles.subtitle}>Think alike. Score together.</Text>
       </Animated.View>
-      <Animated.Text style={[styles.tagline, { opacity }]}>
+
+      {/* Bottom tagline */}
+      <Animated.Text style={[styles.tagline, { opacity: taglineOpacity }]}>
         A consensus party game
       </Animated.Text>
     </View>
@@ -47,48 +79,54 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
-  content: {
-    alignItems: 'center',
+  logoWrap: {
+    marginBottom: 28,
   },
   logoBox: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
-    backgroundColor: '#2ecc71',
+    width: 104,
+    height: 104,
+    borderRadius: Radius.card,
+    backgroundColor: Colors.primaryGreen,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#2ecc71',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    elevation: 12,
+    // 3D shadow matching the button system
+    shadowColor: Colors.greenShadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 8,
+    // Bottom border trick for Android 3D look
+    borderBottomWidth: 6,
+    borderBottomColor: Colors.greenShadow,
   },
   logoEmoji: {
-    fontSize: 48,
+    fontSize: 52,
   },
   title: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 42,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    letterSpacing: 1,
-    marginBottom: 8,
+    color: Colors.textPrimary,
+    letterSpacing: 0.5,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#2ecc71',
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontFamily: FontFamily.semiBold,
+    fontSize: 17,
+    color: Colors.textSecondary,
+    letterSpacing: 0.3,
   },
   tagline: {
     position: 'absolute',
-    bottom: 48,
-    fontSize: 13,
-    color: '#ffffff44',
-    letterSpacing: 1,
+    bottom: 52,
+    fontFamily: FontFamily.bold,
+    fontSize: 12,
+    color: Colors.textDisabled,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });

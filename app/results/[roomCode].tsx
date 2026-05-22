@@ -1,25 +1,23 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { ScoreBoard } from '@/src/components/ScoreBoard';
 import { useEffect } from 'react';
+import { DuoButton } from '@/src/components/DuoButton';
+import { Colors, Radius, FontFamily } from '@/constants/theme';
 
 export default function ResultsScreen() {
   const { roomCode } = useLocalSearchParams<{ roomCode: string }>();
   const router = useRouter();
   const { room, players, isHost, myUid, playAgain, leaveRoom, error } = useGame();
 
-  // Navigate back to lobby if host restarts
   useEffect(() => {
-    if (room?.phase === 'LOBBY') {
-      router.replace(`/lobby/${roomCode}`);
-    }
+    if (room?.phase === 'LOBBY') router.replace(`/lobby/${roomCode}`);
   }, [room?.phase]);
 
   const handlePlayAgain = async () => {
     await playAgain();
   };
-
   const handleLeave = async () => {
     await leaveRoom();
     router.replace('/home');
@@ -27,129 +25,136 @@ export default function ResultsScreen() {
 
   if (!room) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loading}>Loading...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.loading}>Loading…</Text>
+      </SafeAreaView>
     );
   }
 
-  // Find winner(s)
   const sortedPlayers = Object.entries(players).sort(([, a], [, b]) => b.score - a.score);
   const topScore = sortedPlayers[0]?.[1]?.score ?? 0;
   const winners = sortedPlayers.filter(([, p]) => p.score === topScore);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Game Over!</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Title */}
+        <Text style={styles.title}>Game Over! 🏆</Text>
 
-      <View style={styles.winnerBox}>
-        {winners.length === 1 ? (
-          <>
-            <Text style={styles.winnerLabel}>Winner</Text>
-            <Text style={styles.winnerName}>{winners[0][1].nickname}</Text>
-            <Text style={styles.winnerScore}>{topScore} pts</Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.winnerLabel}>Tie!</Text>
-            <Text style={styles.winnerName}>
-              {winners.map(([, p]) => p.nickname).join(' & ')}
-            </Text>
-            <Text style={styles.winnerScore}>{topScore} pts</Text>
-          </>
+        {/* Winner card */}
+        <View style={styles.winnerCard}>
+          <Text style={styles.winnerLabel}>{winners.length === 1 ? 'WINNER' : 'TIE'}</Text>
+          <Text style={styles.winnerName}>{winners.map(([, p]) => p.nickname).join(' & ')}</Text>
+          <View style={styles.scorePill}>
+            <Text style={styles.scorePillText}>{topScore} pts</Text>
+          </View>
+        </View>
+
+        {/* Scoreboard */}
+        <View style={styles.scoreSection}>
+          <Text style={styles.sectionTitle}>FINAL STANDINGS</Text>
+          <View style={styles.scoreCard}>
+            <ScoreBoard players={players} myUid={myUid} showRank />
+          </View>
+        </View>
+
+        {isHost && (
+          <DuoButton label="Play Again" onPress={handlePlayAgain} style={styles.playAgainBtn} />
         )}
-      </View>
 
-      <View style={styles.scoreSection}>
-        <Text style={styles.sectionTitle}>Final Standings</Text>
-        <ScoreBoard players={players} myUid={myUid} showRank />
-      </View>
+        {!isHost && <Text style={styles.waitingText}>Waiting for host…</Text>}
 
-      {isHost && (
-        <Pressable style={styles.playAgainButton} onPress={handlePlayAgain}>
-          <Text style={styles.playAgainText}>Play Again</Text>
+        <Pressable style={styles.leaveButton} onPress={handleLeave}>
+          <Text style={styles.leaveButtonText}>Leave</Text>
         </Pressable>
-      )}
 
-      {!isHost && (
-        <Text style={styles.waitingText}>Waiting for host...</Text>
-      )}
-
-      <Pressable style={styles.leaveButton} onPress={handleLeave}>
-        <Text style={styles.leaveButtonText}>Leave</Text>
-      </Pressable>
-
-      {error && <Text style={styles.error}>{error}</Text>}
-    </View>
+        {error && <Text style={styles.error}>{error}</Text>}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.backgroundAlt,
+  },
+  scroll: {
     padding: 24,
-    backgroundColor: '#fff',
+    paddingBottom: 48,
   },
   loading: {
+    fontFamily: FontFamily.regular,
     textAlign: 'center',
     marginTop: 48,
-    color: '#999',
+    color: Colors.textSecondary,
   },
   title: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 32,
-    fontWeight: 'bold',
+    color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    marginTop: 8,
   },
-  winnerBox: {
+  winnerCard: {
     alignItems: 'center',
-    backgroundColor: '#fef9e7',
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
     borderWidth: 2,
-    borderColor: '#f1c40f',
+    borderColor: Colors.yellow,
+    padding: 28,
+    marginBottom: 24,
   },
   winnerLabel: {
-    fontSize: 14,
-    color: '#666',
-    textTransform: 'uppercase',
+    fontFamily: FontFamily.bold,
+    fontSize: 12,
+    color: Colors.yellow,
     letterSpacing: 2,
-  },
-  winnerName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginVertical: 4,
-  },
-  winnerScore: {
-    fontSize: 20,
-    color: '#2ecc71',
-    fontWeight: '600',
-  },
-  scoreSection: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
     marginBottom: 8,
   },
-  playAgainButton: {
-    backgroundColor: '#2ecc71',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
+  winnerName: {
+    fontFamily: FontFamily.extraBold,
+    fontSize: 28,
+    color: Colors.textPrimary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  scorePill: {
+    backgroundColor: Colors.yellow,
+    borderRadius: Radius.badge,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  scorePillText: {
+    fontFamily: FontFamily.extraBold,
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  scoreSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  scoreCard: {
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  playAgainBtn: {
     marginBottom: 12,
   },
-  playAgainText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   waitingText: {
+    fontFamily: FontFamily.semiBold,
     textAlign: 'center',
-    color: '#666',
+    color: Colors.textSecondary,
     marginBottom: 12,
   },
   leaveButton: {
@@ -157,11 +162,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   leaveButtonText: {
-    color: '#e74c3c',
-    fontSize: 16,
+    fontFamily: FontFamily.bold,
+    color: Colors.red,
+    fontSize: 15,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   error: {
-    color: '#e74c3c',
+    fontFamily: FontFamily.semiBold,
+    color: Colors.red,
     textAlign: 'center',
     marginTop: 8,
   },

@@ -1,53 +1,50 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
+  // Brand
+  primaryGreen: '#58CC02',
+  greenShadow: '#43C000',
+  lightGreen: '#89E219',
+  blue: '#1CB0F6',
+  red: '#FF4B4B',
+  yellow: '#FFC800',
+  orange: '#FF9600',
+  purple: '#CE82FF',
+
+  // Text
+  textPrimary: '#4B4B4B',
+  textSecondary: '#777777',
+  textDisabled: '#AFAFAF',
+
+  // Surface
+  border: '#E5E5E5',
+  background: '#FFFFFF',
+  backgroundAlt: '#F7F7F7',
+
+  // Card states
+  cardDefault: '#FFFFFF',
+  cardSelected: '#DDF4FF',
+  cardCorrect: '#D7FFB8',
+  cardIncorrect: '#FFDFE0',
+  borderSelected: '#1CB0F6',
+  borderCorrect: '#58CC02',
+  borderIncorrect: '#FF4B4B',
+
+  // Danger button
+  dangerShadow: '#C23333',
+
+  // Secondary button shadow
+  secondaryShadow: '#B0B0B0',
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const Radius = {
+  button: 12,
+  card: 16,
+  input: 12,
+  badge: 9999,
+};
+
+export const FontFamily = {
+  regular: 'Nunito_400Regular',
+  semiBold: 'Nunito_600SemiBold',
+  bold: 'Nunito_700Bold',
+  extraBold: 'Nunito_800ExtraBold',
+};

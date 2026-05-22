@@ -3,14 +3,16 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
+import { DuoButton } from '@/src/components/DuoButton';
+import { Colors, Radius, FontFamily } from '@/constants/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -18,10 +20,11 @@ export default function HomeScreen() {
   const [nickname, setNickname] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [showJoin, setShowJoin] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
 
   const handleCreate = () => {
     if (!nickname.trim()) {
-      Alert.alert('Error', 'Please enter a nickname');
+      Alert.alert('Oops!', 'Please enter a nickname');
       return;
     }
     router.push(`/create?nickname=${encodeURIComponent(nickname.trim())}`);
@@ -29,11 +32,11 @@ export default function HomeScreen() {
 
   const handleJoin = async () => {
     if (!nickname.trim()) {
-      Alert.alert('Error', 'Please enter a nickname');
+      Alert.alert('Oops!', 'Please enter a nickname');
       return;
     }
     if (!joinCode.trim() || joinCode.trim().length !== 4) {
-      Alert.alert('Error', 'Please enter a valid 4-digit room code');
+      Alert.alert('Oops!', 'Please enter a valid 4-digit room code');
       return;
     }
     try {
@@ -49,65 +52,71 @@ export default function HomeScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>Same Page</Text>
-        <Text style={styles.subtitle}>Think alike. Score together.</Text>
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Your Nickname</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter nickname..."
-            placeholderTextColor="#aaa"
-            value={nickname}
-            onChangeText={setNickname}
-            maxLength={20}
-            autoCapitalize="none"
-          />
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.logo}>🟢</Text>
+          <Text style={styles.title}>Same Page</Text>
+          <Text style={styles.subtitle}>Think alike. Score together.</Text>
         </View>
 
-        {!showJoin ? (
-          <View style={styles.buttonGroup}>
-            <Pressable style={styles.primaryButton} onPress={handleCreate}>
-              <Text style={styles.primaryButtonText}>Create Room</Text>
-            </Pressable>
-
-            <Pressable style={styles.secondaryButton} onPress={() => setShowJoin(true)}>
-              <Text style={styles.secondaryButtonText}>Join Room</Text>
-            </Pressable>
+        {/* Card */}
+        <View style={styles.card}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>YOUR NICKNAME</Text>
+            <TextInput
+              style={[styles.input, focused === 'nickname' && styles.inputFocused]}
+              placeholder="Enter nickname…"
+              placeholderTextColor={Colors.textDisabled}
+              value={nickname}
+              onChangeText={setNickname}
+              maxLength={20}
+              autoCapitalize="none"
+              onFocus={() => setFocused('nickname')}
+              onBlur={() => setFocused(null)}
+            />
           </View>
-        ) : (
-          <>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Room Code</Text>
-              <TextInput
-                style={[styles.input, styles.codeInput]}
-                placeholder="0000"
-                placeholderTextColor="#aaa"
-                value={joinCode}
-                onChangeText={setJoinCode}
-                maxLength={4}
-                keyboardType="number-pad"
-                textAlign="center"
-              />
-            </View>
-            <View style={styles.buttonGroup}>
-              <Pressable style={styles.primaryButton} onPress={handleJoin} disabled={loading}>
-                <Text style={styles.primaryButtonText}>
-                  {loading ? 'Joining...' : 'Join'}
-                </Text>
-              </Pressable>
-              <Pressable style={styles.secondaryButton} onPress={() => setShowJoin(false)}>
-                <Text style={styles.secondaryButtonText}>Back</Text>
-              </Pressable>
-            </View>
-          </>
-        )}
 
-        {error && <Text style={styles.error}>{error}</Text>}
-      </View>
+          {!showJoin ? (
+            <View style={styles.buttonGroup}>
+              <DuoButton label="Create Room" onPress={handleCreate} />
+              <DuoButton label="Join Room" onPress={() => setShowJoin(true)} variant="secondary" />
+            </View>
+          ) : (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>ROOM CODE</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.codeInput,
+                    focused === 'code' && styles.inputFocused,
+                  ]}
+                  placeholder="0000"
+                  placeholderTextColor={Colors.textDisabled}
+                  value={joinCode}
+                  onChangeText={setJoinCode}
+                  maxLength={4}
+                  keyboardType="number-pad"
+                  textAlign="center"
+                  onFocus={() => setFocused('code')}
+                  onBlur={() => setFocused(null)}
+                />
+              </View>
+              <View style={styles.buttonGroup}>
+                <DuoButton
+                  label={loading ? 'Joining…' : 'Join'}
+                  onPress={handleJoin}
+                  disabled={loading}
+                />
+                <DuoButton label="Back" onPress={() => setShowJoin(false)} variant="secondary" />
+              </View>
+            </>
+          )}
+
+          {error && <Text style={styles.error}>{error}</Text>}
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -115,7 +124,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: Colors.backgroundAlt,
+  },
+  scroll: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -124,84 +136,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
+  logo: {
+    fontSize: 52,
+    marginBottom: 8,
+  },
   title: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 36,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    letterSpacing: 1,
+    color: Colors.textPrimary,
+    letterSpacing: 0.5,
     marginBottom: 6,
   },
   subtitle: {
+    fontFamily: FontFamily.semiBold,
     fontSize: 15,
-    color: '#2ecc71',
-    fontWeight: '500',
+    color: Colors.textSecondary,
   },
   card: {
     width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
+    maxWidth: 380,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
   },
   inputGroup: {
     marginBottom: 16,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: '#555',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontFamily: FontFamily.bold,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    letterSpacing: 0.8,
+    marginBottom: 8,
   },
   input: {
-    borderWidth: 1.5,
-    borderColor: '#e0e0e0',
-    borderRadius: 10,
-    padding: 12,
+    fontFamily: FontFamily.semiBold,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    borderRadius: Radius.input,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     fontSize: 16,
-    backgroundColor: '#fafafa',
-    color: '#222',
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
+  },
+  inputFocused: {
+    borderColor: Colors.blue,
   },
   codeInput: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    letterSpacing: 8,
+    fontFamily: FontFamily.extraBold,
+    fontSize: 32,
+    letterSpacing: 10,
     paddingVertical: 14,
   },
   buttonGroup: {
-    gap: 10,
+    gap: 12,
     marginTop: 4,
   },
-  primaryButton: {
-    backgroundColor: '#2ecc71',
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  secondaryButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#444',
-    fontSize: 16,
-    fontWeight: '500',
-  },
   error: {
-    color: '#e74c3c',
+    fontFamily: FontFamily.semiBold,
+    color: Colors.red,
     marginTop: 14,
     textAlign: 'center',
     fontSize: 14,

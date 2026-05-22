@@ -31,7 +31,9 @@ export function useFirebaseGame(): GameState & GameActions {
   const [myAnswer, setMyAnswer] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submittedPlayerIds, setSubmittedPlayerIds] = useState<string[]>([]);
-  const [revealedAnswers, setRevealedAnswers] = useState<Record<string, RevealedAnswer> | null>(null);
+  const [revealedAnswers, setRevealedAnswers] = useState<Record<string, RevealedAnswer> | null>(
+    null,
+  );
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [myUid, setMyUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,8 +70,8 @@ export function useFirebaseGame(): GameState & GameActions {
       const packIds: string[] = Array.isArray(rawPackIds)
         ? rawPackIds
         : rawPackIds
-        ? Object.values(rawPackIds)
-        : ['starter_pack'];
+          ? Object.values(rawPackIds)
+          : ['starter_pack'];
 
       setRoom({
         hostUid: data.hostUid,
@@ -140,77 +142,83 @@ export function useFirebaseGame(): GameState & GameActions {
     return unsub;
   }, [roomCode, room?.phase, room?.currentRound]);
 
-  const createRoom = useCallback(async (nickname: string, settings: RoomSettings): Promise<string> => {
-    if (!myUid) throw new Error('Not authenticated');
-    setLoading(true);
-    setError(null);
+  const createRoom = useCallback(
+    async (nickname: string, settings: RoomSettings): Promise<string> => {
+      if (!myUid) throw new Error('Not authenticated');
+      setLoading(true);
+      setError(null);
 
-    try {
-      let code = generateRoomCode();
-      let attempts = 0;
+      try {
+        let code = generateRoomCode();
+        let attempts = 0;
 
-      while (attempts < 10) {
-        const snap = await get(ref(db, `rooms/${code}`));
-        if (!snap.exists()) break;
-        code = generateRoomCode();
-        attempts++;
+        while (attempts < 10) {
+          const snap = await get(ref(db, `rooms/${code}`));
+          if (!snap.exists()) break;
+          code = generateRoomCode();
+          attempts++;
+        }
+
+        await set(ref(db, `rooms/${code}`), {
+          hostUid: myUid,
+          phase: 'LOBBY',
+          currentRound: 0,
+          totalRounds: settings.totalRounds,
+          timerEndsAt: null,
+          currentPrompt: null,
+          createdAt: serverTimestamp(),
+          packIds: settings.packIds,
+          roundDuration: settings.roundDuration,
+        });
+
+        await set(ref(db, `rooms/${code}/players/${myUid}`), {
+          nickname,
+          score: 0,
+          connected: true,
+        });
+
+        usedPromptIndicesRef.current = [];
+        setRoomCode(code);
+        return code;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
       }
+    },
+    [myUid],
+  );
 
-      await set(ref(db, `rooms/${code}`), {
-        hostUid: myUid,
-        phase: 'LOBBY',
-        currentRound: 0,
-        totalRounds: settings.totalRounds,
-        timerEndsAt: null,
-        currentPrompt: null,
-        createdAt: serverTimestamp(),
-        packIds: settings.packIds,
-        roundDuration: settings.roundDuration,
-      });
+  const joinRoom = useCallback(
+    async (code: string, nickname: string): Promise<void> => {
+      if (!myUid) throw new Error('Not authenticated');
+      setLoading(true);
+      setError(null);
 
-      await set(ref(db, `rooms/${code}/players/${myUid}`), {
-        nickname,
-        score: 0,
-        connected: true,
-      });
+      try {
+        const roomSnap = await get(ref(db, `rooms/${code}`));
+        if (!roomSnap.exists()) throw new Error('Room not found');
 
-      usedPromptIndicesRef.current = [];
-      setRoomCode(code);
-      return code;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [myUid]);
+        const roomData = roomSnap.val();
+        if (roomData.phase !== 'LOBBY') throw new Error('Game already in progress');
 
-  const joinRoom = useCallback(async (code: string, nickname: string): Promise<void> => {
-    if (!myUid) throw new Error('Not authenticated');
-    setLoading(true);
-    setError(null);
+        await set(ref(db, `rooms/${code}/players/${myUid}`), {
+          nickname,
+          score: 0,
+          connected: true,
+        });
 
-    try {
-      const roomSnap = await get(ref(db, `rooms/${code}`));
-      if (!roomSnap.exists()) throw new Error('Room not found');
-
-      const roomData = roomSnap.val();
-      if (roomData.phase !== 'LOBBY') throw new Error('Game already in progress');
-
-      await set(ref(db, `rooms/${code}/players/${myUid}`), {
-        nickname,
-        score: 0,
-        connected: true,
-      });
-
-      setRoomCode(code);
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [myUid]);
+        setRoomCode(code);
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [myUid],
+  );
 
   const leaveRoom = useCallback(async (): Promise<void> => {
     if (!roomCode || !myUid) return;
@@ -234,15 +242,18 @@ export function useFirebaseGame(): GameState & GameActions {
     }
   }, [roomCode, myUid, isHost]);
 
-  const updateRoomSettings = useCallback(async (settings: RoomSettings): Promise<void> => {
-    if (!roomCode || !myUid || !isHost) return;
+  const updateRoomSettings = useCallback(
+    async (settings: RoomSettings): Promise<void> => {
+      if (!roomCode || !myUid || !isHost) return;
 
-    await update(ref(db, `rooms/${roomCode}`), {
-      packIds: settings.packIds,
-      roundDuration: settings.roundDuration,
-      totalRounds: settings.totalRounds,
-    });
-  }, [roomCode, myUid, isHost]);
+      await update(ref(db, `rooms/${roomCode}`), {
+        packIds: settings.packIds,
+        roundDuration: settings.roundDuration,
+        totalRounds: settings.totalRounds,
+      });
+    },
+    [roomCode, myUid, isHost],
+  );
 
   const startGame = useCallback(async (): Promise<void> => {
     if (!roomCode || !myUid || !isHost || !room) return;
@@ -265,29 +276,34 @@ export function useFirebaseGame(): GameState & GameActions {
     });
   }, [roomCode, myUid, isHost, room, players]);
 
-  const submitAnswer = useCallback(async (answer: string): Promise<void> => {
-    if (!roomCode || !myUid || !room || room.phase !== 'GUESSING') return;
-    if (hasSubmitted) return;
+  const submitAnswer = useCallback(
+    async (answer: string): Promise<void> => {
+      if (!roomCode || !myUid || !room || room.phase !== 'GUESSING') return;
+      if (hasSubmitted) return;
 
-    const trimmed = answer.trim();
-    if (!trimmed || trimmed.length > 100) {
-      setError('Answer must be 1-100 characters');
-      return;
-    }
+      const trimmed = answer.trim();
+      if (!trimmed || trimmed.length > 100) {
+        setError('Answer must be 1-100 characters');
+        return;
+      }
 
-    await set(ref(db, `rooms/${roomCode}/answers/${room.currentRound}/${myUid}`), {
-      answer: trimmed,
-      submittedAt: serverTimestamp(),
-    });
+      await set(ref(db, `rooms/${roomCode}/answers/${room.currentRound}/${myUid}`), {
+        answer: trimmed,
+        submittedAt: serverTimestamp(),
+      });
 
-    // Write to public submissions node (no answer content — just presence).
-    // Fire-and-forget: the answer is already saved, so a race with phase
-    // transition should not surface as an error to the player.
-    set(ref(db, `rooms/${roomCode}/submissions/${room.currentRound}/${myUid}`), true).catch(() => {});
+      // Write to public submissions node (no answer content — just presence).
+      // Fire-and-forget: the answer is already saved, so a race with phase
+      // transition should not surface as an error to the player.
+      set(ref(db, `rooms/${roomCode}/submissions/${room.currentRound}/${myUid}`), true).catch(
+        () => {},
+      );
 
-    setMyAnswer(trimmed);
-    setHasSubmitted(true);
-  }, [roomCode, myUid, room, hasSubmitted]);
+      setMyAnswer(trimmed);
+      setHasSubmitted(true);
+    },
+    [roomCode, myUid, room, hasSubmitted],
+  );
 
   const transitionToReveal = useCallback(async (): Promise<void> => {
     if (!roomCode || !myUid || !isHost || !room) return;
