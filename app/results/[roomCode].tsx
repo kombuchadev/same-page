@@ -5,6 +5,8 @@ import { ScoreBoard } from '@/src/components/ScoreBoard';
 import { useEffect } from 'react';
 import { DuoButton } from '@/src/components/DuoButton';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
+import { GameLoadingScreen } from '@/src/components/GameLoadingScreen';
+import { LOADING_MESSAGES } from '@/src/hooks/useLoadingMessages';
 
 export default function ResultsScreen() {
   const { roomCode } = useLocalSearchParams<{ roomCode: string }>();
@@ -13,7 +15,7 @@ export default function ResultsScreen() {
 
   useEffect(() => {
     if (room?.phase === 'LOBBY') router.replace(`/lobby/${roomCode}`);
-  }, [room?.phase]);
+  }, [room?.phase, roomCode, router]);
 
   const handlePlayAgain = async () => {
     await playAgain();
@@ -24,11 +26,7 @@ export default function ResultsScreen() {
   };
 
   if (!room) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.loading}>Loading…</Text>
-      </SafeAreaView>
-    );
+    return <GameLoadingScreen messages={LOADING_MESSAGES.generic} />;
   }
 
   const sortedPlayers = Object.entries(players).sort(([, a], [, b]) => b.score - a.score);

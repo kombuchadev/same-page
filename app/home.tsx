@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { DuoButton } from '@/src/components/DuoButton';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
+import { LOADING_MESSAGES } from '@/src/hooks/useLoadingMessages';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -105,9 +106,10 @@ export default function HomeScreen() {
               </View>
               <View style={styles.buttonGroup}>
                 <DuoButton
-                  label={loading ? 'Joining…' : 'Join'}
+                  label="Join"
                   onPress={handleJoin}
-                  disabled={loading}
+                  loading={loading}
+                  loadingMessages={LOADING_MESSAGES.joinRoom}
                 />
                 <DuoButton label="Back" onPress={() => setShowJoin(false)} variant="secondary" />
               </View>

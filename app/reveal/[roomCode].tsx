@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { ScoreBoard } from '@/src/components/ScoreBoard';
 import type { RevealedAnswer } from '@/src/types/game';
-import { Alert } from 'react-native';
 import { DuoButton } from '@/src/components/DuoButton';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
+import { GameLoadingScreen } from '@/src/components/GameLoadingScreen';
+import { LOADING_MESSAGES } from '@/src/hooks/useLoadingMessages';
 
 export default function RevealScreen() {
   const { roomCode } = useLocalSearchParams<{ roomCode: string }>();
@@ -30,25 +31,21 @@ export default function RevealScreen() {
   useEffect(() => {
     if (room?.phase === 'GUESSING') router.replace(`/game/${roomCode}`);
     else if (room?.phase === 'RESULTS') router.replace(`/results/${roomCode}`);
-  }, [room?.phase]);
+  }, [room?.phase, roomCode, router]);
 
   const handleNextRound = async () => {
     await nextRound();
   };
 
   if (!room || !revealedAnswers) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.loading}>Calculating scores…</Text>
-      </SafeAreaView>
-    );
+    return <GameLoadingScreen messages={LOADING_MESSAGES.calculating} />;
   }
 
   const clusters = new Map<
     string,
-    { label: string; entries: Array<{ playerId: string; answer: RevealedAnswer }> }
+    { label: string; entries: { playerId: string; answer: RevealedAnswer }[] }
   >();
-  const noAnswerPlayers: Array<{ playerId: string; answer: RevealedAnswer }> = [];
+  const noAnswerPlayers: { playerId: string; answer: RevealedAnswer }[] = [];
 
   for (const [playerId, revealed] of Object.entries(revealedAnswers)) {
     if (revealed.clusterLabel === '__no_answer__') {
@@ -113,7 +110,7 @@ export default function RevealScreen() {
                         {player?.nickname ?? 'Unknown'}
                         {playerId === myUid ? ' (You)' : ''}
                       </Text>
-                      <Text style={styles.answerText}>"{answer.answer}"</Text>
+                      <Text style={styles.answerText}>&ldquo;{answer.answer}&rdquo;</Text>
                     </View>
                   );
                 })}

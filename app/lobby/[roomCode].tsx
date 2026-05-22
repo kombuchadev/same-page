@@ -15,6 +15,8 @@ import { PlayerList } from '@/src/components/PlayerList';
 import { PACKS, PACK_ICONS, getPackById } from '@/src/data/packs';
 import { DuoButton } from '@/src/components/DuoButton';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
+import { GameLoadingScreen } from '@/src/components/GameLoadingScreen';
+import { LOADING_MESSAGES } from '@/src/hooks/useLoadingMessages';
 
 const TIMER_OPTIONS = [
   { label: '15 sec', value: 15 },
@@ -48,7 +50,7 @@ export default function LobbyScreen() {
     if (room?.phase === 'GUESSING') {
       router.replace(`/game/${roomCode}`);
     }
-  }, [room?.phase]);
+  }, [room?.phase, roomCode, router]);
 
   const openEdit = () => {
     if (!room) return;
@@ -98,11 +100,7 @@ export default function LobbyScreen() {
   };
 
   if (!room) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.loading}>Loading room…</Text>
-      </SafeAreaView>
-    );
+    return <GameLoadingScreen messages={LOADING_MESSAGES.generic} />;
   }
 
   const selectedPacks = room.packIds.map((id) => getPackById(id)).filter(Boolean);
@@ -178,9 +176,10 @@ export default function LobbyScreen() {
       <View style={styles.footer}>
         {isHost ? (
           <DuoButton
-            label={playerCount < 2 ? 'Need 2+ players' : 'Start Game'}
+            label="Start Game"
             onPress={handleStart}
             disabled={playerCount < 2}
+            loading={false}
           />
         ) : (
           <View style={styles.waitingBox}>
@@ -286,9 +285,10 @@ export default function LobbyScreen() {
             </View>
 
             <DuoButton
-              label={saving ? 'Saving…' : 'Save Settings'}
+              label="Save Settings"
               onPress={saveSettings}
-              disabled={saving}
+              loading={saving}
+              loadingMessages={LOADING_MESSAGES.saveSettings}
             />
           </ScrollView>
         </SafeAreaView>
