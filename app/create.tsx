@@ -5,6 +5,7 @@ import { useGame } from '@/src/context/GameContext';
 import { PACKS, PACK_ICONS } from '@/src/data/packs';
 import { DuoButton } from '@/src/components/DuoButton';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
+import { LOADING_MESSAGES } from '@/src/hooks/useLoadingMessages';
 
 const TIMER_OPTIONS = [
   { label: '15 sec', value: 15 },
@@ -146,9 +147,10 @@ export default function CreateScreen() {
         </View>
 
         <DuoButton
-          label={loading ? 'Creating room…' : 'Create Room'}
+          label="Create Room"
           onPress={handleCreate}
-          disabled={loading}
+          loading={loading}
+          loadingMessages={LOADING_MESSAGES.createRoom}
           style={styles.createBtn}
         />
       </ScrollView>
