@@ -13,6 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { PlayerList } from '@/src/components/PlayerList';
 import { PACKS, PACK_ICONS, getPackById } from '@/src/data/packs';
+import { DuoButton } from '@/src/components/DuoButton';
+import { Colors, Radius, FontFamily } from '@/constants/theme';
 
 const TIMER_OPTIONS = [
   { label: '15 sec', value: 15 },
@@ -31,9 +33,9 @@ const ROUNDS_OPTIONS = [
 export default function LobbyScreen() {
   const { roomCode } = useLocalSearchParams<{ roomCode: string }>();
   const router = useRouter();
-  const { room, players, isHost, myUid, startGame, leaveRoom, updateRoomSettings, error } = useGame();
+  const { room, players, isHost, myUid, startGame, leaveRoom, updateRoomSettings, error } =
+    useGame();
 
-  // Settings modal state (mirrors room settings while editing)
   const [editVisible, setEditVisible] = useState(false);
   const [editPackIds, setEditPackIds] = useState<string[]>(['starter_pack']);
   const [editDuration, setEditDuration] = useState(30);
@@ -42,7 +44,6 @@ export default function LobbyScreen() {
 
   const playerCount = Object.keys(players).length;
 
-  // Navigate when game starts
   useEffect(() => {
     if (room?.phase === 'GUESSING') {
       router.replace(`/game/${roomCode}`);
@@ -60,7 +61,7 @@ export default function LobbyScreen() {
   const togglePack = (id: string) => {
     setEditPackIds((prev) => {
       if (prev.includes(id)) {
-        if (prev.length === 1) return prev; // keep at least one
+        if (prev.length === 1) return prev;
         return prev.filter((p) => p !== id);
       }
       return [...prev, id];
@@ -70,7 +71,11 @@ export default function LobbyScreen() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      await updateRoomSettings({ packIds: editPackIds, roundDuration: editDuration, totalRounds: editRounds });
+      await updateRoomSettings({
+        packIds: editPackIds,
+        roundDuration: editDuration,
+        totalRounds: editRounds,
+      });
       setEditVisible(false);
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -94,9 +99,9 @@ export default function LobbyScreen() {
 
   if (!room) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loading}>Loading room...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.loading}>Loading room…</Text>
+      </SafeAreaView>
     );
   }
 
@@ -108,20 +113,20 @@ export default function LobbyScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>Lobby</Text>
 
-        {/* Room code */}
-        <View style={styles.codeBox}>
-          <Text style={styles.codeLabel}>Room Code</Text>
+        {/* Room code card */}
+        <View style={styles.codeCard}>
+          <Text style={styles.codeLabel}>ROOM CODE</Text>
           <Text style={styles.code}>{roomCode}</Text>
           <Text style={styles.codeHint}>Share this with friends</Text>
         </View>
 
-        {/* Settings row — tappable for host */}
-        <View style={styles.settingsSection}>
-          <View style={styles.settingsHeader}>
-            <Text style={styles.settingsLabel}>Game Settings</Text>
+        {/* Settings */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>GAME SETTINGS</Text>
             {isHost && (
-              <Pressable onPress={openEdit} style={styles.editButton}>
-                <Text style={styles.editButtonText}>Edit</Text>
+              <Pressable onPress={openEdit} style={styles.editBadge}>
+                <Text style={styles.editBadgeText}>✏️ Edit</Text>
               </Pressable>
             )}
           </View>
@@ -131,23 +136,16 @@ export default function LobbyScreen() {
             onPress={isHost ? openEdit : undefined}
             disabled={!isHost}
           >
-            {/* Timer chip */}
             <View style={styles.settingRow}>
               <Text style={styles.settingIcon}>⏱</Text>
               <Text style={styles.settingValue}>{room.roundDuration} seconds per round</Text>
             </View>
-
             <View style={styles.divider} />
-
-            {/* Rounds */}
             <View style={styles.settingRow}>
               <Text style={styles.settingIcon}>🔁</Text>
               <Text style={styles.settingValue}>{room.totalRounds} rounds</Text>
             </View>
-
             <View style={styles.divider} />
-
-            {/* Packs */}
             <View style={styles.settingRow}>
               <Text style={styles.settingIcon}>🃏</Text>
               <View style={styles.packTagsWrap}>
@@ -160,145 +158,140 @@ export default function LobbyScreen() {
                 ))}
               </View>
             </View>
-
             <Text style={styles.totalQuestions}>{totalQuestions} questions in pool</Text>
-
-            {isHost && (
-              <Text style={styles.tapHint}>Tap to edit settings</Text>
-            )}
+            {isHost && <Text style={styles.tapHint}>Tap to edit settings</Text>}
           </Pressable>
         </View>
 
         {/* Players */}
-        <View style={styles.playersSection}>
-          <Text style={styles.sectionTitle}>Players ({playerCount})</Text>
-          <PlayerList players={players} hostUid={room.hostUid} myUid={myUid} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>PLAYERS ({playerCount})</Text>
+          <View style={styles.playerCard}>
+            <PlayerList players={players} hostUid={room.hostUid} myUid={myUid} />
+          </View>
         </View>
 
         {error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>
 
-      {/* Bottom actions */}
+      {/* Footer */}
       <View style={styles.footer}>
         {isHost ? (
-          <Pressable
-            style={[styles.startButton, playerCount < 2 && styles.startButtonDisabled]}
+          <DuoButton
+            label={playerCount < 2 ? 'Need 2+ players' : 'Start Game'}
             onPress={handleStart}
             disabled={playerCount < 2}
-          >
-            <Text style={styles.startButtonText}>
-              {playerCount < 2 ? 'Need 2+ players to start' : 'Start Game'}
-            </Text>
-          </Pressable>
+          />
         ) : (
           <View style={styles.waitingBox}>
-            <Text style={styles.waitingText}>Waiting for host to start...</Text>
+            <Text style={styles.waitingText}>Waiting for host to start…</Text>
           </View>
         )}
-
         <Pressable style={styles.leaveButton} onPress={handleLeave}>
           <Text style={styles.leaveButtonText}>Leave Room</Text>
         </Pressable>
       </View>
 
-      {/* Settings Edit Modal */}
+      {/* Edit modal */}
       <Modal
         visible={editVisible}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setEditVisible(false)}
       >
-        <ScrollView style={styles.modal} contentContainerStyle={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Edit Settings</Text>
-            <Pressable onPress={() => setEditVisible(false)} style={styles.modalClose}>
-              <Text style={styles.modalCloseText}>✕</Text>
-            </Pressable>
-          </View>
-
-          {/* Timer */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>⏱  Time Per Round</Text>
-            <View style={styles.timerRow}>
-              {TIMER_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.value}
-                  style={[styles.timerChip, editDuration === opt.value && styles.timerChipActive]}
-                  onPress={() => setEditDuration(opt.value)}
-                >
-                  <Text style={[styles.timerChipText, editDuration === opt.value && styles.timerChipTextActive]}>
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
+        <SafeAreaView style={styles.modal}>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Settings</Text>
+              <Pressable onPress={() => setEditVisible(false)} style={styles.modalClose}>
+                <Text style={styles.modalCloseText}>✕</Text>
+              </Pressable>
             </View>
-          </View>
 
-          {/* Rounds */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🔁  Number of Rounds</Text>
-            <View style={styles.timerRow}>
-              {ROUNDS_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.value}
-                  style={[styles.timerChip, editRounds === opt.value && styles.timerChipActive]}
-                  onPress={() => setEditRounds(opt.value)}
-                >
-                  <Text style={[styles.timerChipText, editRounds === opt.value && styles.timerChipTextActive]}>
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
+            {/* Timer */}
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionTitle}>⏱ Time Per Round</Text>
+              <View style={styles.chipRow}>
+                {TIMER_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    style={[styles.chip, editDuration === opt.value && styles.chipActive]}
+                    onPress={() => setEditDuration(opt.value)}
+                  >
+                    <Text
+                      style={[styles.chipText, editDuration === opt.value && styles.chipTextActive]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </View>
 
-          {/* Pack multi-select */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>🃏  Question Packs</Text>
-              <Text style={styles.sectionMeta}>
-                {PACKS.filter((p) => editPackIds.includes(p.id)).reduce(
-                  (s, p) => s + p.questions.length,
-                  0
-                )}{' '}
-                questions
-              </Text>
+            {/* Rounds */}
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionTitle}>🔁 Number of Rounds</Text>
+              <View style={styles.chipRow}>
+                {ROUNDS_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    style={[styles.chip, editRounds === opt.value && styles.chipActive]}
+                    onPress={() => setEditRounds(opt.value)}
+                  >
+                    <Text
+                      style={[styles.chipText, editRounds === opt.value && styles.chipTextActive]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-            <Text style={styles.sectionHint}>Select one or more packs</Text>
-            {PACKS.map((pack) => {
-              const selected = editPackIds.includes(pack.id);
-              return (
-                <Pressable
-                  key={pack.id}
-                  style={[styles.packCard, selected && styles.packCardActive]}
-                  onPress={() => togglePack(pack.id)}
-                >
-                  <View style={styles.packCardInner}>
+
+            {/* Packs */}
+            <View style={styles.modalSection}>
+              <View style={styles.modalSectionHeaderRow}>
+                <Text style={styles.modalSectionTitle}>🃏 Question Packs</Text>
+                <Text style={styles.modalSectionMeta}>
+                  {PACKS.filter((p) => editPackIds.includes(p.id)).reduce(
+                    (s, p) => s + p.questions.length,
+                    0,
+                  )}{' '}
+                  questions
+                </Text>
+              </View>
+              <Text style={styles.modalSectionHint}>Select one or more packs</Text>
+              {PACKS.map((pack) => {
+                const selected = editPackIds.includes(pack.id);
+                return (
+                  <Pressable
+                    key={pack.id}
+                    style={[styles.packCard, selected && styles.packCardSelected]}
+                    onPress={() => togglePack(pack.id)}
+                  >
                     <Text style={styles.packIcon}>{PACK_ICONS[pack.id] ?? '🎮'}</Text>
                     <View style={styles.packInfo}>
-                      <Text style={[styles.packName, selected && styles.packNameActive]}>
+                      <Text style={[styles.packName, selected && styles.packNameSelected]}>
                         {pack.name}
                       </Text>
                       <Text style={styles.packDescription}>{pack.description}</Text>
-                      <Text style={styles.packCount}>{pack.questions.length} questions</Text>
+                      <Text style={styles.packCount}>{pack.questions.length} QUESTIONS</Text>
                     </View>
-                    <View style={[styles.checkbox, selected && styles.checkboxActive]}>
-                      {selected && <Text style={styles.checkmarkText}>✓</Text>}
+                    <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+                      {selected && <Text style={styles.checkmark}>✓</Text>}
                     </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-          <Pressable
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-            onPress={saveSettings}
-            disabled={saving}
-          >
-            <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save Settings'}</Text>
-          </Pressable>
-        </ScrollView>
+            <DuoButton
+              label={saving ? 'Saving…' : 'Save Settings'}
+              onPress={saveSettings}
+              disabled={saving}
+            />
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -307,88 +300,91 @@ export default function LobbyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: Colors.backgroundAlt,
   },
   scroll: {
     padding: 24,
     paddingBottom: 8,
   },
   loading: {
+    fontFamily: FontFamily.regular,
     textAlign: 'center',
     marginTop: 48,
-    color: '#ffffff66',
+    color: Colors.textSecondary,
     fontSize: 16,
   },
   title: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: 20,
     marginTop: 8,
   },
-  codeBox: {
+  // Code card
+  codeCard: {
     alignItems: 'center',
-    backgroundColor: '#ffffff0f',
-    borderRadius: 16,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
     padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#ffffff15',
+    marginBottom: 20,
   },
   codeLabel: {
-    fontSize: 12,
-    color: '#ffffff66',
-    textTransform: 'uppercase',
+    fontFamily: FontFamily.bold,
+    fontSize: 11,
+    color: Colors.textSecondary,
     letterSpacing: 1,
     marginBottom: 4,
   },
   code: {
-    fontSize: 44,
-    fontWeight: 'bold',
-    letterSpacing: 10,
-    color: '#2ecc71',
+    fontFamily: FontFamily.extraBold,
+    fontSize: 48,
+    letterSpacing: 12,
+    color: Colors.primaryGreen,
     marginVertical: 4,
   },
   codeHint: {
+    fontFamily: FontFamily.regular,
     fontSize: 12,
-    color: '#ffffff44',
+    color: Colors.textDisabled,
   },
-  settingsSection: {
+  // Sections
+  section: {
     marginBottom: 20,
   },
-  settingsHeader: {
+  sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
   },
-  settingsLabel: {
-    fontSize: 14,
-    color: '#ffffff66',
-    textTransform: 'uppercase',
+  sectionTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: 12,
+    color: Colors.textSecondary,
     letterSpacing: 0.8,
-    fontWeight: '600',
   },
-  editButton: {
-    backgroundColor: '#2ecc7122',
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#2ecc7155',
+  editBadge: {
+    backgroundColor: '#EFFFDC',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: Radius.badge,
+    borderWidth: 2,
+    borderColor: Colors.primaryGreen,
   },
-  editButtonText: {
-    color: '#2ecc71',
-    fontSize: 13,
-    fontWeight: '700',
+  editBadgeText: {
+    fontFamily: FontFamily.bold,
+    color: Colors.primaryGreen,
+    fontSize: 12,
   },
   settingsCard: {
-    backgroundColor: '#ffffff0d',
-    borderRadius: 14,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#ffffff15',
   },
   settingRow: {
     flexDirection: 'row',
@@ -401,14 +397,14 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   settingValue: {
+    fontFamily: FontFamily.semiBold,
     fontSize: 15,
-    color: '#ffffffcc',
-    fontWeight: '500',
+    color: Colors.textPrimary,
     flex: 1,
   },
   divider: {
     height: 1,
-    backgroundColor: '#ffffff15',
+    backgroundColor: Colors.border,
     marginVertical: 10,
   },
   packTagsWrap: {
@@ -418,77 +414,55 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   packTag: {
-    backgroundColor: '#2ecc7120',
-    borderRadius: 6,
+    backgroundColor: '#EFFFDC',
+    borderRadius: Radius.badge,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: '#2ecc7133',
+    borderColor: Colors.primaryGreen,
   },
   packTagText: {
+    fontFamily: FontFamily.bold,
     fontSize: 12,
-    color: '#2ecc71',
-    fontWeight: '600',
+    color: Colors.primaryGreen,
   },
   totalQuestions: {
+    fontFamily: FontFamily.regular,
     fontSize: 12,
-    color: '#ffffff44',
+    color: Colors.textDisabled,
     marginTop: 10,
     textAlign: 'right',
   },
   tapHint: {
+    fontFamily: FontFamily.regular,
     fontSize: 11,
-    color: '#ffffff33',
+    color: Colors.textDisabled,
     textAlign: 'center',
     marginTop: 6,
     fontStyle: 'italic',
   },
-  playersSection: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#ffffff99',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
+  playerCard: {
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    overflow: 'hidden',
   },
   footer: {
     padding: 20,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#ffffff10',
-  },
-  startButton: {
-    backgroundColor: '#2ecc71',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#2ecc71',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  startButtonDisabled: {
-    backgroundColor: '#ffffff22',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  startButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
+    borderTopWidth: 2,
+    borderTopColor: Colors.border,
+    backgroundColor: Colors.background,
+    gap: 8,
   },
   waitingBox: {
     alignItems: 'center',
     paddingVertical: 14,
-    marginBottom: 10,
   },
   waitingText: {
-    color: '#ffffff66',
+    fontFamily: FontFamily.semiBold,
+    color: Colors.textSecondary,
     fontSize: 15,
   },
   leaveButton: {
@@ -496,21 +470,23 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   leaveButtonText: {
-    color: '#e74c3c',
+    fontFamily: FontFamily.bold,
+    color: Colors.red,
     fontSize: 15,
-    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   error: {
-    color: '#e74c3c',
+    fontFamily: FontFamily.semiBold,
+    color: Colors.red,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 8,
   },
-
-  // ── Settings modal ──────────────────────────────────────────────────
+  // Modal
   modal: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: Colors.backgroundAlt,
   },
   modalContent: {
     padding: 24,
@@ -524,82 +500,88 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   modalTitle: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    color: Colors.textPrimary,
   },
   modalClose: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#ffffff15',
+    backgroundColor: Colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseText: {
-    color: '#ffffff99',
+    fontFamily: FontFamily.bold,
+    color: Colors.textSecondary,
     fontSize: 16,
-    fontWeight: '600',
   },
-  section: {
+  modalSection: {
     marginBottom: 28,
   },
-  sectionHeader: {
+  modalSectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
     marginBottom: 4,
   },
-  sectionMeta: {
-    fontSize: 13,
-    color: '#2ecc71',
-    fontWeight: '600',
+  modalSectionTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    marginBottom: 12,
   },
-  sectionHint: {
+  modalSectionMeta: {
+    fontFamily: FontFamily.bold,
     fontSize: 13,
-    color: '#ffffff55',
+    color: Colors.primaryGreen,
+  },
+  modalSectionHint: {
+    fontFamily: FontFamily.regular,
+    fontSize: 13,
+    color: Colors.textSecondary,
     marginBottom: 14,
+    marginTop: -8,
   },
-  timerRow: {
+  chipRow: {
     flexDirection: 'row',
     gap: 10,
   },
-  timerChip: {
+  chip: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: Radius.button,
     borderWidth: 2,
-    borderColor: '#ffffff22',
-    backgroundColor: '#ffffff10',
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
     alignItems: 'center',
   },
-  timerChipActive: {
-    borderColor: '#2ecc71',
-    backgroundColor: '#2ecc7120',
+  chipActive: {
+    borderColor: Colors.primaryGreen,
+    backgroundColor: '#EFFFDC',
   },
-  timerChipText: {
-    color: '#ffffff88',
-    fontSize: 14,
-    fontWeight: '600',
+  chipText: {
+    fontFamily: FontFamily.bold,
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
-  timerChipTextActive: {
-    color: '#2ecc71',
+  chipTextActive: {
+    color: Colors.primaryGreen,
   },
   packCard: {
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#ffffff15',
-    backgroundColor: '#ffffff08',
-    marginBottom: 12,
-  },
-  packCardActive: {
-    borderColor: '#2ecc71',
-    backgroundColor: '#2ecc7112',
-  },
-  packCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
     padding: 16,
+    marginBottom: 12,
+  },
+  packCardSelected: {
+    borderColor: Colors.primaryGreen,
+    backgroundColor: Colors.cardCorrect,
   },
   packIcon: {
     fontSize: 32,
@@ -609,25 +591,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   packName: {
+    fontFamily: FontFamily.bold,
     fontSize: 15,
-    fontWeight: '700',
-    color: '#ffffffcc',
+    color: Colors.textPrimary,
     marginBottom: 3,
   },
-  packNameActive: {
-    color: '#ffffff',
+  packNameSelected: {
+    color: Colors.primaryGreen,
   },
   packDescription: {
+    fontFamily: FontFamily.regular,
     fontSize: 13,
-    color: '#ffffff66',
+    color: Colors.textSecondary,
     lineHeight: 18,
     marginBottom: 4,
   },
   packCount: {
+    fontFamily: FontFamily.bold,
     fontSize: 11,
-    color: '#2ecc7199',
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    color: Colors.textDisabled,
     letterSpacing: 0.5,
   },
   checkbox: {
@@ -635,37 +617,18 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#ffffff33',
+    borderColor: Colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
   },
-  checkboxActive: {
-    backgroundColor: '#2ecc71',
-    borderColor: '#2ecc71',
+  checkboxSelected: {
+    backgroundColor: Colors.primaryGreen,
+    borderColor: Colors.primaryGreen,
   },
-  checkmarkText: {
+  checkmark: {
+    fontFamily: FontFamily.extraBold,
     color: '#fff',
     fontSize: 15,
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#2ecc71',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#2ecc71',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
   },
 });

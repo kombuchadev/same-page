@@ -1,5 +1,6 @@
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import type { Player } from '@/src/types/game';
+import { Colors, Radius, FontFamily } from '@/constants/theme';
 
 interface PlayerListProps {
   players: Record<string, Player>;
@@ -15,17 +16,23 @@ export function PlayerList({ players, hostUid, myUid }: PlayerListProps) {
       data={entries}
       keyExtractor={([id]) => id}
       renderItem={({ item: [id, player] }) => (
-        <View style={styles.row}>
+        <View style={[styles.row, !player.connected && styles.rowDisconnected]}>
           <View style={styles.nameRow}>
-            <Text style={[styles.name, !player.connected && styles.disconnected]}>
+            <Text style={[styles.name, !player.connected && styles.nameDisconnected]}>
               {player.nickname}
             </Text>
-            {id === hostUid && <Text style={styles.badge}> (Host)</Text>}
-            {id === myUid && <Text style={styles.badge}> (You)</Text>}
+            {id === hostUid && (
+              <View style={[styles.badge, styles.hostBadge]}>
+                <Text style={styles.badgeText}>HOST</Text>
+              </View>
+            )}
+            {id === myUid && (
+              <View style={[styles.badge, styles.youBadge]}>
+                <Text style={[styles.badgeText, styles.youBadgeText]}>YOU</Text>
+              </View>
+            )}
           </View>
-          {!player.connected && (
-            <Text style={styles.disconnectedLabel}>Disconnected</Text>
-          )}
+          {!player.connected && <Text style={styles.disconnectedLabel}>Disconnected</Text>}
         </View>
       )}
       ListEmptyComponent={<Text style={styles.empty}>No players yet</Text>}
@@ -35,34 +42,57 @@ export function PlayerList({ players, hostUid, myUid }: PlayerListProps) {
 
 const styles = StyleSheet.create({
   row: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: Colors.border,
+  },
+  rowDisconnected: {
+    opacity: 0.5,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   name: {
+    fontFamily: FontFamily.bold,
     fontSize: 16,
-    fontWeight: '500',
+    color: Colors.textPrimary,
   },
-  disconnected: {
-    color: '#999',
+  nameDisconnected: {
+    color: Colors.textDisabled,
   },
   badge: {
-    fontSize: 12,
-    color: '#666',
+    borderRadius: Radius.badge,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  hostBadge: {
+    backgroundColor: Colors.yellow,
+  },
+  youBadge: {
+    backgroundColor: Colors.blue,
+  },
+  badgeText: {
+    fontFamily: FontFamily.extraBold,
+    fontSize: 10,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  youBadgeText: {
+    color: '#FFFFFF',
   },
   disconnectedLabel: {
+    fontFamily: FontFamily.regular,
     fontSize: 12,
-    color: '#e74c3c',
+    color: Colors.red,
     marginTop: 2,
   },
   empty: {
+    fontFamily: FontFamily.regular,
     textAlign: 'center',
-    color: '#999',
+    color: Colors.textDisabled,
     padding: 16,
   },
 });

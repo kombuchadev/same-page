@@ -20,14 +20,14 @@ Players join a room, answer the same prompt, and score points when their answers
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Expo SDK 54 + Expo Router (file-based routing) |
-| Language | TypeScript |
-| Backend / DB | Firebase Realtime Database (Spark free plan) |
-| Auth | Firebase Anonymous Auth (per-tab session isolation) |
-| State | React Context + custom `useFirebaseGame` hook |
-| Scoring | Host-side (no Cloud Functions needed) |
+| Layer        | Technology                                          |
+| ------------ | --------------------------------------------------- |
+| Framework    | Expo SDK 54 + Expo Router (file-based routing)      |
+| Language     | TypeScript                                          |
+| Backend / DB | Firebase Realtime Database (Spark free plan)        |
+| Auth         | Firebase Anonymous Auth (per-tab session isolation) |
+| State        | React Context + custom `useFirebaseGame` hook       |
+| Scoring      | Host-side (no Cloud Functions needed)               |
 
 ---
 
@@ -110,13 +110,13 @@ Replace the values in `firebaseConfig.ts` with your own:
 
 ```ts
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.REGION.firebasedatabase.app",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_PROJECT.firebaseapp.com',
+  databaseURL: 'https://YOUR_PROJECT-default-rtdb.REGION.firebasedatabase.app',
+  projectId: 'YOUR_PROJECT',
+  storageBucket: 'YOUR_PROJECT.firebasestorage.app',
+  messagingSenderId: 'YOUR_SENDER_ID',
+  appId: 'YOUR_APP_ID',
 };
 ```
 
@@ -134,12 +134,12 @@ npm start
 
 This opens the **Expo Dev Tools** in your terminal. From there:
 
-| Command | Action |
-|---|---|
-| Press `a` | Open on Android emulator |
-| Press `i` | Open on iOS simulator (macOS only) |
-| Scan QR code | Open in **Expo Go** on your phone |
-| Press `w` | Open in browser (limited — no mobile sensors) |
+| Command      | Action                                        |
+| ------------ | --------------------------------------------- |
+| Press `a`    | Open on Android emulator                      |
+| Press `i`    | Open on iOS simulator (macOS only)            |
+| Scan QR code | Open in **Expo Go** on your phone             |
+| Press `w`    | Open in browser (limited — no mobile sensors) |
 
 Or run directly:
 
@@ -162,6 +162,7 @@ To simulate multiple players on one machine:
 > **Note:** Browser tabs work well for quick testing. Each tab is treated as a unique player due to `browserSessionPersistence` in Firebase Auth.
 
 **Recommended test flow:**
+
 1. Tab 1 → Enter nickname → Create Room → choose pack + timer → arrives in lobby
 2. Tab 2 → Enter nickname → Join Room → enter the 4-digit code → arrives in same lobby
 3. Tab 1 (host) → Start Game
@@ -175,12 +176,12 @@ To simulate multiple players on one machine:
 
 Packs are stored locally in `src/data/packs.ts`. Currently included:
 
-| Pack | Description |
-|---|---|
-| ⭐ The Essentials | Easy everyday basics — great for first games |
-| 🍕 The Foodie Pack | Food-themed questions — best played hungry |
-| 🎬 The Screen & Stage | Movies, music, and internet culture |
-| 🧩 The Deep End | Abstract and weird — no right answers, only popular ones |
+| Pack                  | Description                                              |
+| --------------------- | -------------------------------------------------------- |
+| ⭐ The Essentials     | Easy everyday basics — great for first games             |
+| 🍕 The Foodie Pack    | Food-themed questions — best played hungry               |
+| 🎬 The Screen & Stage | Movies, music, and internet culture                      |
+| 🧩 The Deep End       | Abstract and weird — no right answers, only popular ones |
 
 The host can select **multiple packs** when creating a room, and can edit the selection from the lobby before the game starts. Questions are drawn from the combined pool of all selected packs.
 

@@ -3,16 +3,19 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Alert,
+  SafeAreaView,
+  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { useTimer } from '@/src/hooks/useTimer';
 import { TimerDisplay } from '@/src/components/TimerDisplay';
+import { DuoButton } from '@/src/components/DuoButton';
+import { Colors, Radius, FontFamily } from '@/constants/theme';
 
 export default function GameScreen() {
   const { roomCode } = useLocalSearchParams<{ roomCode: string }>();
@@ -29,30 +32,17 @@ export default function GameScreen() {
     error,
   } = useGame();
 
-  const handleLeave = () => {
-    Alert.alert('Leave Room', 'Are you sure you want to leave?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Leave', style: 'destructive', onPress: async () => {
-          await leaveRoom();
-          router.replace('/home');
-        }
-      },
-    ]);
-  };
-
   const { secondsLeft, isExpired } = useTimer(room?.timerEndsAt ?? null);
   const [answer, setAnswer] = useState('');
+  const [focused, setFocused] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
 
-  // Navigate on phase change
   useEffect(() => {
     if (room?.phase === 'REVEAL') {
       router.replace(`/reveal/${roomCode}`);
     }
   }, [room?.phase]);
 
-  // Host: auto-transition when timer expires
   useEffect(() => {
     if (isHost && isExpired && room?.phase === 'GUESSING' && !transitioning) {
       setTransitioning(true);
@@ -60,13 +50,10 @@ export default function GameScreen() {
     }
   }, [isHost, isExpired, room?.phase, transitioning]);
 
-  // Host: auto-transition when all connected players have submitted
   useEffect(() => {
     if (!isHost || !room || room.phase !== 'GUESSING' || transitioning) return;
-
     const connectedPlayerIds = Object.keys(players).filter((id) => players[id].connected);
     if (connectedPlayerIds.length === 0) return;
-
     const allSubmitted = connectedPlayerIds.every((id) => submittedPlayerIds.includes(id));
     if (allSubmitted) {
       setTransitioning(true);
@@ -80,11 +67,25 @@ export default function GameScreen() {
     setAnswer('');
   };
 
+  const handleLeave = () => {
+    Alert.alert('Leave Room', 'Are you sure you want to leave?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          await leaveRoom();
+          router.replace('/home');
+        },
+      },
+    ]);
+  };
+
   if (!room) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loading}>Loading...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.loading}>Loading…</Text>
+      </SafeAreaView>
     );
   }
 
@@ -93,64 +94,84 @@ export default function GameScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Text style={styles.roundLabel}>
-        Round {room.currentRound} of {room.totalRounds}
-      </Text>
-
-      <TimerDisplay secondsLeft={secondsLeft} isExpired={isExpired} />
-
-      <View style={styles.promptBox}>
-        <Text style={styles.prompt}>{room.currentPrompt}</Text>
-      </View>
-
-      {!hasSubmitted ? (
-        <View style={styles.inputSection}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your answer..."
-            value={answer}
-            onChangeText={setAnswer}
-            maxLength={100}
-            autoCapitalize="none"
-            autoFocus
-            editable={!isExpired}
-          />
-          <Pressable
-            style={[styles.submitButton, (!answer.trim() || isExpired) && styles.disabledButton]}
-            onPress={handleSubmit}
-            disabled={!answer.trim() || isExpired}
-          >
-            <Text style={styles.submitButtonText}>Submit</Text>
-          </Pressable>
+      <SafeAreaView style={styles.inner}>
+        {/* Round label */}
+        <View style={styles.roundBadge}>
+          <Text style={styles.roundText}>
+            ROUND {room.currentRound} OF {room.totalRounds}
+          </Text>
         </View>
-      ) : (
-        <View style={styles.waitingSection}>
-          <Text style={styles.waitingText}>Answer submitted!</Text>
-          <Text style={styles.waitingSubtext}>Waiting for other players...</Text>
 
-          <View style={styles.playerStatus}>
-            {Object.entries(players).map(([id, player]) => {
-              const submitted = submittedPlayerIds.includes(id);
-              return (
-                <View key={id} style={styles.playerStatusRow}>
-                  <Text style={[styles.playerStatusIcon, submitted ? styles.iconDone : styles.iconPending]}>
-                    {submitted ? '✓' : '…'}
-                  </Text>
-                  <Text style={[styles.playerStatusText, !submitted && styles.playerStatusPending]}>
-                    {player.nickname}
-                  </Text>
-                </View>
-              );
-            })}
+        {/* Timer */}
+        <TimerDisplay secondsLeft={secondsLeft} isExpired={isExpired} />
+
+        {/* Prompt */}
+        <View style={styles.promptCard}>
+          <Text style={styles.prompt}>{room.currentPrompt}</Text>
+        </View>
+
+        {!hasSubmitted ? (
+          <View style={styles.inputSection}>
+            <TextInput
+              style={[styles.input, focused && styles.inputFocused]}
+              placeholder="Type your answer…"
+              placeholderTextColor={Colors.textDisabled}
+              value={answer}
+              onChangeText={setAnswer}
+              maxLength={100}
+              autoCapitalize="none"
+              autoFocus
+              editable={!isExpired}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+            />
+            <DuoButton
+              label="Submit"
+              onPress={handleSubmit}
+              disabled={!answer.trim() || isExpired}
+            />
           </View>
-        </View>
-      )}
+        ) : (
+          <View style={styles.waitingSection}>
+            <View style={styles.submittedBadge}>
+              <Text style={styles.submittedText}>✓ Answer submitted!</Text>
+            </View>
+            <Text style={styles.waitingSubtext}>Waiting for other players…</Text>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+            <View style={styles.playerStatusList}>
+              {Object.entries(players).map(([id, player]) => {
+                const submitted = submittedPlayerIds.includes(id);
+                return (
+                  <View
+                    key={id}
+                    style={[styles.playerStatusRow, submitted && styles.playerStatusRowDone]}
+                  >
+                    <Text
+                      style={[
+                        styles.playerStatusIcon,
+                        submitted ? styles.iconDone : styles.iconPending,
+                      ]}
+                    >
+                      {submitted ? '✓' : '○'}
+                    </Text>
+                    <Text
+                      style={[styles.playerStatusName, !submitted && styles.playerStatusPending]}
+                    >
+                      {player.nickname}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
-      <Pressable style={styles.leaveButton} onPress={handleLeave}>
-        <Text style={styles.leaveButtonText}>Leave Room</Text>
-      </Pressable>
+        {error && <Text style={styles.error}>{error}</Text>}
+
+        <Pressable style={styles.leaveButton} onPress={handleLeave}>
+          <Text style={styles.leaveButtonText}>Leave Room</Text>
+        </Pressable>
+      </SafeAreaView>
     </KeyboardAvoidingView>
   );
 }
@@ -158,112 +179,144 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.backgroundAlt,
+  },
+  inner: {
+    flex: 1,
     padding: 24,
-    backgroundColor: '#fff',
   },
   loading: {
+    fontFamily: FontFamily.regular,
     textAlign: 'center',
     marginTop: 48,
-    color: '#999',
+    color: Colors.textSecondary,
   },
-  roundLabel: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
+  roundBadge: {
+    alignSelf: 'center',
+    backgroundColor: Colors.blue,
+    borderRadius: Radius.badge,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    marginBottom: 12,
+    marginTop: 4,
   },
-  promptBox: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 12,
+  roundText: {
+    fontFamily: FontFamily.bold,
+    fontSize: 12,
+    color: '#FFFFFF',
+    letterSpacing: 0.8,
+  },
+  promptCard: {
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
     padding: 24,
-    marginVertical: 24,
+    marginVertical: 20,
     alignItems: 'center',
   },
   prompt: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 22,
-    fontWeight: '600',
+    color: Colors.textPrimary,
     textAlign: 'center',
+    lineHeight: 30,
   },
   inputSection: {
-    gap: 12,
+    gap: 14,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 14,
+    fontFamily: FontFamily.semiBold,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    borderRadius: Radius.input,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     fontSize: 18,
-    backgroundColor: '#f9f9f9',
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
   },
-  submitButton: {
-    backgroundColor: '#3498db',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    backgroundColor: '#bdc3c7',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  inputFocused: {
+    borderColor: Colors.blue,
   },
   waitingSection: {
     alignItems: 'center',
-    marginTop: 16,
   },
-  waitingText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2ecc71',
+  submittedBadge: {
+    backgroundColor: Colors.cardCorrect,
+    borderRadius: Radius.badge,
+    borderWidth: 2,
+    borderColor: Colors.primaryGreen,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  submittedText: {
+    fontFamily: FontFamily.bold,
+    fontSize: 16,
+    color: Colors.primaryGreen,
   },
   waitingSubtext: {
+    fontFamily: FontFamily.regular,
     fontSize: 14,
-    color: '#999',
-    marginTop: 4,
+    color: Colors.textSecondary,
+    marginBottom: 20,
   },
-  playerStatus: {
-    marginTop: 16,
+  playerStatusList: {
     width: '100%',
+    gap: 8,
   },
   playerStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    gap: 10,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  playerStatusRowDone: {
+    borderColor: Colors.primaryGreen,
+    backgroundColor: Colors.cardCorrect,
   },
   playerStatusIcon: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 16,
-    fontWeight: 'bold',
     width: 20,
     textAlign: 'center',
   },
   iconDone: {
-    color: '#2ecc71',
+    color: Colors.primaryGreen,
   },
   iconPending: {
-    color: '#bdc3c7',
+    color: Colors.textDisabled,
   },
-  playerStatusText: {
+  playerStatusName: {
+    fontFamily: FontFamily.bold,
     fontSize: 15,
-    color: '#333',
+    color: Colors.textPrimary,
   },
   playerStatusPending: {
-    color: '#aaa',
+    color: Colors.textDisabled,
   },
   error: {
-    color: '#e74c3c',
+    fontFamily: FontFamily.semiBold,
+    color: Colors.red,
     textAlign: 'center',
     marginTop: 16,
   },
   leaveButton: {
     padding: 12,
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: 'auto',
   },
   leaveButtonText: {
-    color: '#e74c3c',
-    fontSize: 16,
+    fontFamily: FontFamily.bold,
+    color: Colors.red,
+    fontSize: 15,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

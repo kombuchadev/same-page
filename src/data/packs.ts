@@ -476,7 +476,7 @@ export function getPackById(id: string): Pack | undefined {
  */
 export function pickQuestionFromPacks(
   packIds: string[],
-  usedIndices: number[]
+  usedIndices: number[],
 ): { question: string; index: number } {
   const allQuestions: string[] = [];
   for (const packId of packIds) {

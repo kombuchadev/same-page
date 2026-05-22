@@ -1,15 +1,10 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { PACKS, PACK_ICONS } from '@/src/data/packs';
+import { DuoButton } from '@/src/components/DuoButton';
+import { Colors, Radius, FontFamily } from '@/constants/theme';
 
 const TIMER_OPTIONS = [
   { label: '15 sec', value: 15 },
@@ -37,7 +32,6 @@ export default function CreateScreen() {
   const togglePack = (id: string) => {
     setSelectedPackIds((prev) => {
       if (prev.includes(id)) {
-        // Don't deselect if it's the last one
         if (prev.length === 1) return prev;
         return prev.filter((p) => p !== id);
       }
@@ -64,105 +58,108 @@ export default function CreateScreen() {
 
   const totalQuestions = PACKS.filter((p) => selectedPackIds.includes(p.id)).reduce(
     (sum, p) => sum + p.questions.length,
-    0
+    0,
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-        <Text style={styles.title}>Room Settings</Text>
-        <Text style={styles.hostLabel}>Host: {nickname}</Text>
-      </View>
-
-      {/* Timer */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⏱  Time Per Round</Text>
-        <View style={styles.timerRow}>
-          {TIMER_OPTIONS.map((opt) => (
-            <Pressable
-              key={opt.value}
-              style={[styles.timerChip, roundDuration === opt.value && styles.timerChipActive]}
-              onPress={() => setRoundDuration(opt.value)}
-            >
-              <Text style={[styles.timerChipText, roundDuration === opt.value && styles.timerChipTextActive]}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          ))}
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backText}>← Back</Text>
+          </Pressable>
+          <Text style={styles.title}>Room Settings</Text>
+          <Text style={styles.hostLabel}>Host: {nickname}</Text>
         </View>
-      </View>
 
-      {/* Rounds */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔁  Number of Rounds</Text>
-        <View style={styles.timerRow}>
-          {ROUNDS_OPTIONS.map((opt) => (
-            <Pressable
-              key={opt.value}
-              style={[styles.timerChip, totalRounds === opt.value && styles.timerChipActive]}
-              onPress={() => setTotalRounds(opt.value)}
-            >
-              <Text style={[styles.timerChipText, totalRounds === opt.value && styles.timerChipTextActive]}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          ))}
+        {/* Timer */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⏱ Time Per Round</Text>
+          <View style={styles.chipRow}>
+            {TIMER_OPTIONS.map((opt) => (
+              <Pressable
+                key={opt.value}
+                style={[styles.chip, roundDuration === opt.value && styles.chipActive]}
+                onPress={() => setRoundDuration(opt.value)}
+              >
+                <Text
+                  style={[styles.chipText, roundDuration === opt.value && styles.chipTextActive]}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </View>
 
-      {/* Pack multi-select */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>🃏  Question Packs</Text>
-          <Text style={styles.sectionMeta}>{totalQuestions} questions</Text>
+        {/* Rounds */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔁 Number of Rounds</Text>
+          <View style={styles.chipRow}>
+            {ROUNDS_OPTIONS.map((opt) => (
+              <Pressable
+                key={opt.value}
+                style={[styles.chip, totalRounds === opt.value && styles.chipActive]}
+                onPress={() => setTotalRounds(opt.value)}
+              >
+                <Text style={[styles.chipText, totalRounds === opt.value && styles.chipTextActive]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
-        <Text style={styles.sectionHint}>Select one or more packs</Text>
-        {PACKS.map((pack) => {
-          const selected = selectedPackIds.includes(pack.id);
-          return (
-            <Pressable
-              key={pack.id}
-              style={[styles.packCard, selected && styles.packCardActive]}
-              onPress={() => togglePack(pack.id)}
-            >
-              <View style={styles.packCardInner}>
+
+        {/* Pack multi-select */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>🃏 Question Packs</Text>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{totalQuestions} questions</Text>
+            </View>
+          </View>
+          <Text style={styles.sectionHint}>Select one or more packs</Text>
+
+          {PACKS.map((pack) => {
+            const selected = selectedPackIds.includes(pack.id);
+            return (
+              <Pressable
+                key={pack.id}
+                style={[styles.packCard, selected && styles.packCardSelected]}
+                onPress={() => togglePack(pack.id)}
+              >
                 <Text style={styles.packIcon}>{PACK_ICONS[pack.id] ?? '🎮'}</Text>
                 <View style={styles.packInfo}>
-                  <Text style={[styles.packName, selected && styles.packNameActive]}>
+                  <Text style={[styles.packName, selected && styles.packNameSelected]}>
                     {pack.name}
                   </Text>
                   <Text style={styles.packDescription}>{pack.description}</Text>
-                  <Text style={styles.packCount}>{pack.questions.length} questions</Text>
+                  <Text style={styles.packCount}>{pack.questions.length} QUESTIONS</Text>
                 </View>
-                <View style={[styles.checkbox, selected && styles.checkboxActive]}>
+                <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
                   {selected && <Text style={styles.checkmark}>✓</Text>}
                 </View>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+              </Pressable>
+            );
+          })}
+        </View>
 
-      <Pressable
-        style={[styles.createButton, loading && styles.createButtonDisabled]}
-        onPress={handleCreate}
-        disabled={loading}
-      >
-        <Text style={styles.createButtonText}>
-          {loading ? 'Creating room...' : 'Create Room'}
-        </Text>
-      </Pressable>
-    </ScrollView>
+        <DuoButton
+          label={loading ? 'Creating room…' : 'Create Room'}
+          onPress={handleCreate}
+          disabled={loading}
+          style={styles.createBtn}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: Colors.backgroundAlt,
   },
   content: {
     padding: 24,
@@ -170,91 +167,100 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 28,
-    marginTop: 16,
+    marginTop: 8,
   },
   backButton: {
     marginBottom: 12,
   },
   backText: {
-    color: '#2ecc71',
+    fontFamily: FontFamily.bold,
+    color: Colors.primaryGreen,
     fontSize: 16,
-    fontWeight: '600',
   },
   title: {
+    fontFamily: FontFamily.extraBold,
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   hostLabel: {
+    fontFamily: FontFamily.regular,
     fontSize: 14,
-    color: '#ffffff66',
+    color: Colors.textSecondary,
   },
   section: {
     marginBottom: 28,
   },
-  sectionHeader: {
+  sectionHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   sectionTitle: {
+    fontFamily: FontFamily.bold,
     fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.3,
-  },
-  sectionMeta: {
-    fontSize: 13,
-    color: '#2ecc71',
-    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 12,
   },
   sectionHint: {
+    fontFamily: FontFamily.regular,
     fontSize: 13,
-    color: '#ffffff55',
+    color: Colors.textSecondary,
     marginBottom: 14,
+    marginTop: -8,
   },
-  timerRow: {
+  badge: {
+    backgroundColor: Colors.primaryGreen,
+    borderRadius: Radius.badge,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    fontFamily: FontFamily.bold,
+    fontSize: 12,
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  chipRow: {
     flexDirection: 'row',
     gap: 10,
   },
-  timerChip: {
+  chip: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: Radius.button,
     borderWidth: 2,
-    borderColor: '#ffffff22',
-    backgroundColor: '#ffffff10',
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
     alignItems: 'center',
   },
-  timerChipActive: {
-    borderColor: '#2ecc71',
-    backgroundColor: '#2ecc7120',
+  chipActive: {
+    borderColor: Colors.primaryGreen,
+    backgroundColor: '#EFFFDC',
   },
-  timerChipText: {
-    color: '#ffffff88',
-    fontSize: 14,
-    fontWeight: '600',
+  chipText: {
+    fontFamily: FontFamily.bold,
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
-  timerChipTextActive: {
-    color: '#2ecc71',
+  chipTextActive: {
+    color: Colors.primaryGreen,
   },
   packCard: {
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#ffffff15',
-    backgroundColor: '#ffffff08',
-    marginBottom: 12,
-  },
-  packCardActive: {
-    borderColor: '#2ecc71',
-    backgroundColor: '#2ecc7112',
-  },
-  packCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: Radius.card,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
     padding: 16,
+    marginBottom: 12,
+  },
+  packCardSelected: {
+    borderColor: Colors.primaryGreen,
+    backgroundColor: Colors.cardCorrect,
   },
   packIcon: {
     fontSize: 32,
@@ -264,25 +270,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   packName: {
+    fontFamily: FontFamily.bold,
     fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffffcc',
+    color: Colors.textPrimary,
     marginBottom: 3,
   },
-  packNameActive: {
-    color: '#ffffff',
+  packNameSelected: {
+    color: Colors.primaryGreen,
   },
   packDescription: {
+    fontFamily: FontFamily.regular,
     fontSize: 13,
-    color: '#ffffff66',
+    color: Colors.textSecondary,
     lineHeight: 18,
     marginBottom: 4,
   },
   packCount: {
+    fontFamily: FontFamily.bold,
     fontSize: 11,
-    color: '#2ecc7199',
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    color: Colors.textDisabled,
     letterSpacing: 0.5,
   },
   checkbox: {
@@ -290,40 +296,22 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#ffffff33',
+    borderColor: Colors.border,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
   },
-  checkboxActive: {
-    backgroundColor: '#2ecc71',
-    borderColor: '#2ecc71',
+  checkboxSelected: {
+    backgroundColor: Colors.primaryGreen,
+    borderColor: Colors.primaryGreen,
   },
   checkmark: {
+    fontFamily: FontFamily.extraBold,
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
   },
-  createButton: {
-    backgroundColor: '#2ecc71',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
+  createBtn: {
     marginTop: 8,
-    shadowColor: '#2ecc71',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  createButtonDisabled: {
-    opacity: 0.6,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
   },
 });
