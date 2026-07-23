@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { DuoButton } from '@/src/components/DuoButton';
+import { Logo } from '@/src/components/Logo';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
 import { LOADING_MESSAGES } from '@/src/hooks/useLoadingMessages';
 
@@ -56,7 +57,9 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>🟢</Text>
+          <View style={styles.logo}>
+            <Logo size={120} />
+          </View>
           <Text style={styles.title}>Same Page</Text>
           <Text style={styles.subtitle}>Think alike. Score together.</Text>
         </View>
@@ -139,8 +142,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logo: {
-    fontSize: 52,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   title: {
     fontFamily: FontFamily.extraBold,

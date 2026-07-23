@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { ScoreBoard } from '@/src/components/ScoreBoard';

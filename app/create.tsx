@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { PACKS, PACK_ICONS } from '@/src/data/packs';

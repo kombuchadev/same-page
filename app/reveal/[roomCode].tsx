@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { ScoreBoard } from '@/src/components/ScoreBoard';
@@ -280,6 +281,8 @@ const styles = StyleSheet.create({
   answerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
     paddingVertical: 5,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
@@ -288,12 +291,16 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bold,
     fontSize: 14,
     color: Colors.textPrimary,
+    flexShrink: 0,
+    maxWidth: '45%',
   },
   answerText: {
     fontFamily: FontFamily.regular,
     fontSize: 14,
     color: Colors.textSecondary,
     fontStyle: 'italic',
+    flex: 1,
+    textAlign: 'right',
   },
   noAnswerLabel: {
     fontFamily: FontFamily.semiBold,

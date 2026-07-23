@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Radius, FontFamily } from '@/constants/theme';
+import { Logo } from '@/src/components/Logo';
+import { Colors, FontFamily } from '@/constants/theme';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -51,9 +52,7 @@ export default function SplashScreen() {
     <View style={styles.container}>
       {/* Logo */}
       <Animated.View style={[styles.logoWrap, { opacity, transform: [{ scale }] }]}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoEmoji}>🧠</Text>
-        </View>
+        <Logo size={150} />
       </Animated.View>
 
       {/* Title + subtitle slide up */}
@@ -85,27 +84,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   logoWrap: {
-    marginBottom: 28,
-  },
-  logoBox: {
-    width: 104,
-    height: 104,
-    borderRadius: Radius.card,
-    backgroundColor: Colors.primaryGreen,
-    justifyContent: 'center',
-    alignItems: 'center',
-    // 3D shadow matching the button system
-    shadowColor: Colors.greenShadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 8,
-    // Bottom border trick for Android 3D look
-    borderBottomWidth: 6,
-    borderBottomColor: Colors.greenShadow,
-  },
-  logoEmoji: {
-    fontSize: 52,
+    marginBottom: 14,
   },
   title: {
     fontFamily: FontFamily.extraBold,

@@ -7,9 +7,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  SafeAreaView,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { useTimer } from '@/src/hooks/useTimer';
