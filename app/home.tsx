@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useGame } from '@/src/context/GameContext';
 import { DuoButton } from '@/src/components/DuoButton';
 import { Logo } from '@/src/components/Logo';
+import { CodeInput } from '@/src/components/CodeInput';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
 import { LOADING_MESSAGES } from '@/src/hooks/useLoadingMessages';
 
@@ -90,22 +91,7 @@ export default function HomeScreen() {
             <>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>ROOM CODE</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.codeInput,
-                    focused === 'code' && styles.inputFocused,
-                  ]}
-                  placeholder="0000"
-                  placeholderTextColor={Colors.textDisabled}
-                  value={joinCode}
-                  onChangeText={setJoinCode}
-                  maxLength={4}
-                  keyboardType="number-pad"
-                  textAlign="center"
-                  onFocus={() => setFocused('code')}
-                  onBlur={() => setFocused(null)}
-                />
+                <CodeInput value={joinCode} onChangeText={setJoinCode} length={4} autoFocus />
               </View>
               <View style={styles.buttonGroup}>
                 <DuoButton
@@ -188,12 +174,6 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: Colors.blue,
-  },
-  codeInput: {
-    fontFamily: FontFamily.extraBold,
-    fontSize: 32,
-    letterSpacing: 10,
-    paddingVertical: 14,
   },
   buttonGroup: {
     gap: 12,
