@@ -52,7 +52,7 @@ export default function CreateScreen() {
         roundDuration,
         totalRounds,
       });
-      router.replace(`/lobby/${code}`);
+      requestAnimationFrame(() => router.replace(`/lobby/${code}`));
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }

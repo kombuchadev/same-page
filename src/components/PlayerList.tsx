@@ -1,4 +1,4 @@
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import type { Player } from '@/src/types/game';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
 
@@ -11,12 +11,14 @@ interface PlayerListProps {
 export function PlayerList({ players, hostUid, myUid }: PlayerListProps) {
   const entries = Object.entries(players);
 
+  if (entries.length === 0) {
+    return <Text style={styles.empty}>No players yet</Text>;
+  }
+
   return (
-    <FlatList
-      data={entries}
-      keyExtractor={([id]) => id}
-      renderItem={({ item: [id, player] }) => (
-        <View style={[styles.row, !player.connected && styles.rowDisconnected]}>
+    <View>
+      {entries.map(([id, player]) => (
+        <View key={id} style={[styles.row, !player.connected && styles.rowDisconnected]}>
           <View style={styles.nameRow}>
             <Text style={[styles.name, !player.connected && styles.nameDisconnected]}>
               {player.nickname}
@@ -34,9 +36,8 @@ export function PlayerList({ players, hostUid, myUid }: PlayerListProps) {
           </View>
           {!player.connected && <Text style={styles.disconnectedLabel}>Disconnected</Text>}
         </View>
-      )}
-      ListEmptyComponent={<Text style={styles.empty}>No players yet</Text>}
-    />
+      ))}
+    </View>
   );
 }
 

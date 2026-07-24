@@ -1,4 +1,4 @@
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import type { Player } from '@/src/types/game';
 import { Colors, Radius, FontFamily } from '@/constants/theme';
 
@@ -14,14 +14,12 @@ export function ScoreBoard({ players, myUid, showRank = false }: ScoreBoardProps
   const sorted = Object.entries(players).sort(([, a], [, b]) => b.score - a.score);
 
   return (
-    <FlatList
-      data={sorted}
-      keyExtractor={([id]) => id}
-      renderItem={({ item: [id, player], index }) => {
+    <View>
+      {sorted.map(([id, player], index) => {
         const isMe = id === myUid;
         const rankColor = RANK_COLORS[index] ?? Colors.textDisabled;
         return (
-          <View style={[styles.row, isMe && styles.myRow]}>
+          <View key={id} style={[styles.row, isMe && styles.myRow]}>
             {showRank && (
               <View style={[styles.rankBadge, { backgroundColor: rankColor }]}>
                 <Text style={styles.rankText}>#{index + 1}</Text>
@@ -43,8 +41,8 @@ export function ScoreBoard({ players, myUid, showRank = false }: ScoreBoardProps
             </View>
           </View>
         );
-      }}
-    />
+      })}
+    </View>
   );
 }
 

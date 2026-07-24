@@ -44,7 +44,7 @@ export default function HomeScreen() {
     }
     try {
       await joinRoom(joinCode.trim(), nickname.trim());
-      router.push(`/lobby/${joinCode.trim()}`);
+      requestAnimationFrame(() => router.push(`/lobby/${joinCode.trim()}`));
     } catch (err: any) {
       Alert.alert('Error', err.message);
     }
