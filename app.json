@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Same Page",
-    "slug": "same-page-temp",
+    "slug": "same-page",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -45,6 +45,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "58d7ef80-0877-4274-9762-3266fa589f99"
+      }
+    },
+    "owner": "shajjar99"
   }
 }
